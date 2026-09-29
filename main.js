@@ -27,26 +27,8 @@
     toastT = setTimeout(() => { toastEl.hidden = true; }, 2600);
   }
 
-  /* ---------- theme ---------- */
-  const themeBtn = $('#themeBtn');
   const root = document.documentElement;
-  function isDark() {
-    const t = root.dataset.theme;
-    return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  function syncThemeIcon() {
-    themeBtn.querySelector('use').setAttribute('href', isDark() ? '#ic-sun' : '#ic-moon');
-    themeBtn.setAttribute('aria-label', isDark() ? 'Switch to light theme' : 'Switch to dark theme');
-  }
-  const savedTheme = store.get('hr-theme', null);
-  if (savedTheme === 'dark' || savedTheme === 'light') root.dataset.theme = savedTheme;
-  syncThemeIcon();
-  themeBtn.addEventListener('click', () => {
-    root.dataset.theme = isDark() ? 'light' : 'dark';
-    store.set('hr-theme', root.dataset.theme);
-    syncThemeIcon();
-  });
-  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', syncThemeIcon);
+  try { localStorage.removeItem('hr-theme'); } catch { /* ignore */ }
 
   /* ---------- header ---------- */
   const bar = $('#bar');
@@ -338,6 +320,41 @@
     })();
   });
 
+  /* ---------- zcash helpers ---------- */
+  const ZEC_USD = 40; // example rate for display only, not a live price
+  const B32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+  const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  function seeded(seedStr) { let x = 0; for (const ch of seedStr) x = (x * 31 + ch.charCodeAt(0)) >>> 0; return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 4294967296); }
+  function demoAddr(ticker, pool) {
+    const r = seeded('zec' + ticker + pool);
+    const pick = (set, n) => Array.from({ length: n }, () => set[Math.floor(r() * set.length)]).join('');
+    return pool === 'shielded' ? 'u1' + pick(B32, 139) : 't1' + pick(B58, 33);
+  }
+  // Format check only (prefix, alphabet, length). Checksums are not verified in this demo.
+  function checkZec(raw) {
+    const v = raw.trim();
+    if (!v) return null;
+    const low = v.toLowerCase();
+    if (/^u1/.test(low)) return new RegExp(`^u1[${B32}]{100,}$`).test(low) ? { addr: low, kind: 'Unified', shielded: true } : { err: 'Unified addresses start with u1 and use only bech32 letters and digits (no b, i, o or 1 after the prefix).' };
+    if (/^zs1/.test(low)) return new RegExp(`^zs1[${B32}]{75}$`).test(low) ? { addr: low, kind: 'Sapling', shielded: true } : { err: 'Sapling addresses are 78 characters long and start with zs1.' };
+    if (/^t[13]/.test(v)) return new RegExp(`^t[13][${B58}]{33}$`).test(v) ? { addr: v, kind: 'Transparent', shielded: false } : { err: 'Transparent addresses are 35 characters long and start with t1 or t3.' };
+    return { err: 'That does not look like a Zcash address. It should start with u1, zs1, t1 or t3.' };
+  }
+  const zecFmt = z => (Math.round(z * 1e8) / 1e8).toFixed(8).replace(/\.?0+$/, '');
+  const short = a => a.length > 20 ? a.slice(0, 10) + '…' + a.slice(-6) : a;
+  const allTips = [];
+  const fanMemos = ['gm from a fan', 'more unboxings please', 'this coin made my week', 'for the next street interview', 'tiny tip, big love', '', 'keep the reels coming', ''];
+  function seedTips(c) {
+    const r = seeded('tips' + c.ticker);
+    const n = 2 + Math.floor(r() * 5);
+    c.tips = [];
+    for (let i = 0; i < n; i++) {
+      const pool = r() < .78 ? 'shielded' : 'transparent';
+      const t = { t: Date.now() - (i + 1) * (20 + r() * 300) * 60000, zec: [0.01, 0.05, 0.1, 0.25, 0.5][Math.floor(r() * 5)], pool, memo: pool === 'shielded' ? fanMemos[Math.floor(r() * fanMemos.length)] : '', coin: c };
+      c.tips.push(t); allTips.push(t);
+    }
+  }
+
   /* ---------- feed ---------- */
   const palette = ['#3346ff', '#ff4a6b', '#12a36b', '#f08a00', '#8a3cff', '#0098c7', '#d4386e', '#4c5578'];
   const now = Date.now();
@@ -353,14 +370,18 @@
   ];
   let coins = seed.map(([name, ticker, line, reels, fees, minsAgo], i) => ({
     name, ticker, line, reels, fees, color: palette[i % palette.length], img: null,
-    last: now - minsAgo * 60000, fund: (fees * SHARE.reels) % REEL_COST, mine: false
+    last: now - minsAgo * 60000, fund: (fees * SHARE.reels) % REEL_COST, mine: false, zecAddr: null, tipsOff: false
   }));
+  coins.forEach(seedTips);
   const mine = store.get('hr-coins', []);
   if (Array.isArray(mine)) {
     mine.filter(c => c && typeof c.ticker === 'string' && !coins.some(x => x.ticker === c.ticker))
-      .forEach(c => coins.unshift({ ...c, mine: true }));
+      .forEach(c => coins.unshift({ ...c, mine: true, tips: [], fund: Number(c.fund) || 0, fees: Number(c.fees) || 0, reels: Number(c.reels) || 0 }));
   }
-  function saveMine() { store.set('hr-coins', coins.filter(c => c.mine)); }
+  coins.forEach(c => { if (!Array.isArray(c.tips)) c.tips = []; c.tips.forEach(t => { t.coin = c; if (!allTips.includes(t)) allTips.push(t); }); });
+  // tips hold a back-reference to their coin, so strip it before saving
+  function saveMine() { store.set('hr-coins', coins.filter(c => c.mine).map(c => ({ ...c, tips: c.tips.map(({ coin, ...t }) => t) }))); }
+  const tipTotal = c => c.tips.reduce((a, t) => a + t.zec, 0);
 
   let sortKey = store.get('hr-sort', 'recent');
   if (!['recent', 'reels', 'fees'].includes(sortKey)) sortKey = 'recent';
@@ -397,11 +418,16 @@
         </dl>
         <div class="meter" aria-hidden="true"><span></span></div>
         <div class="meter-label mono"><span>next reel</span><span data-k="fund"></span></div>
-        <button class="btn btn-line btn-sm" type="button">Buy $${esc(c.ticker)}</button>`;
-      el.querySelector('button').addEventListener('click', () => {
+        <p class="coin-tips mono"><svg class="ic"><use href="#ic-zec"/></svg><span data-k="tips"></span></p>
+        <div class="coin-actions">
+          <button class="btn btn-line btn-sm" type="button" data-act="buy">Buy $${esc(c.ticker)}</button>
+          <button class="btn btn-zec btn-sm" type="button" data-act="tip"><svg class="ic"><use href="#ic-zec"/></svg>Tip ZEC</button>
+        </div>`;
+      el.querySelector('[data-act="buy"]').addEventListener('click', () => {
         trade(c, 1000);
         toast(`Demo trade: $1,000 of $${c.ticker}. No real money moved.`);
       });
+      el.querySelector('[data-act="tip"]').addEventListener('click', () => tipper.open(c));
       cards.set(c.ticker, el);
     }
     el.querySelector('[data-k="reels"]').textContent = c.reels;
@@ -409,6 +435,10 @@
     el.querySelector('[data-k="last"]').textContent = c.reels ? ago(c.last) : 'none yet';
     el.querySelector('[data-k="fund"]').textContent = `${usd(c.fund, 2)} / ${usd(REEL_COST)}`;
     el.querySelector('.meter span').style.width = (c.fund / REEL_COST * 100) + '%';
+    el.querySelector('[data-k="tips"]').textContent = `${zecFmt(tipTotal(c)) || '0'} ZEC tipped · ${c.tips.length} tip${c.tips.length === 1 ? '' : 's'}`;
+    const tb = el.querySelector('[data-act="tip"]');
+    tb.disabled = !!c.tipsOff;
+    tb.title = c.tipsOff ? 'This coin is not taking tips right now' : '';
     return el;
   }
   function sorted() {
@@ -445,7 +475,14 @@
   function trade(c, size) {
     const f = size * FEE;
     c.fees += f;
-    c.fund += f * SHARE.reels;
+    const made = fundJar(c, f * SHARE.reels);
+    if (c.mine) saveMine();
+    render();
+    pushTape(c, size);
+    if (dash) dash.onTrade(c, size, made);
+  }
+  function fundJar(c, dollars) {
+    c.fund += dollars;
     let made = 0;
     while (c.fund >= REEL_COST) { c.fund -= REEL_COST; c.reels++; made++; }
     if (made) {
@@ -453,17 +490,27 @@
       const el = cards.get(c.ticker);
       if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
     }
-    if (c.mine) saveMine();
-    render();
-    pushTape(c, size);
-    if (dash) dash.onTrade(c, size, made);
+    return made;
   }
-  let dash = null;
+  function addTip(c, zec, pool, memo) {
+    const t = { t: Date.now(), zec, pool, memo, coin: c, fresh: true };
+    c.tips.unshift(t); allTips.push(t);
+    const made = fundJar(c, zec * ZEC_USD); // 100% of a tip goes to the reel jar
+    if (c.mine) saveMine();
+    render(); drawZecBoard();
+    tapeItems.unshift({ t: c.ticker, v: zec, zec: true }); tapeItems.length = Math.min(tapeItems.length, 10);
+    if (dash) dash.onTip(c, made);
+    return made;
+  }
+  let dash = null, tipper = null;
   // simulated market
   setInterval(() => {
     if (document.hidden) return;
     const c = coins[Math.floor(Math.random() * coins.length)];
-    trade(c, 200 + Math.random() * 4800);
+    if (Math.random() < .12 && !c.tipsOff) {
+      const shielded = Math.random() < .8;
+      addTip(c, [0.01, 0.02, 0.05, 0.1][Math.floor(Math.random() * 4)], shielded ? 'shielded' : 'transparent', shielded ? fanMemos[Math.floor(Math.random() * fanMemos.length)] : '');
+    } else trade(c, 200 + Math.random() * 4800);
   }, 2400);
   setInterval(render, 30000); // refresh "x minutes ago"
   render();
@@ -472,7 +519,9 @@
   const tape = $('#tape');
   const tapeItems = coins.slice(0, 8).map(c => ({ t: c.ticker, v: 400 + Math.random() * 3000 }));
   function drawTape() {
-    const html = tapeItems.map(i => `<span><b>$${esc(i.t)}</b> <span class="up">+${usd(i.v)}</span> traded</span>`).join('');
+    const html = tapeItems.map(i => i.zec
+      ? `<span><b>$${esc(i.t)}</b> <span class="up">${zecFmt(i.v)} ZEC</span> tip</span>`
+      : `<span><b>$${esc(i.t)}</b> <span class="up">+${usd(i.v)}</span> traded</span>`).join('');
     tape.innerHTML = html + html; // duplicated for seamless loop
   }
   function pushTape(c, size) {
@@ -516,6 +565,141 @@
   const launch = $('#launch'), license = $('#license');
   $('#licenseLink').addEventListener('click', e => { e.preventDefault(); openModal(license); });
 
+
+
+  /* ---------- zcash board ---------- */
+  const zecList = $('#zecList');
+  function drawZecBoard() {
+    const recent = allTips.slice().sort((a, b) => b.t - a.t).slice(0, 6);
+    zecList.innerHTML = recent.map(t => `
+      <li class="${t.fresh ? 'new' : ''}">
+        <span class="zbadge ${t.pool === 'shielded' ? '' : 't'}"><svg class="ic"><use href="#ic-${t.pool === 'shielded' ? 'shield' : 'zec'}"/></svg></span>
+        <span class="who"><b>$${esc(t.coin.ticker)}</b> · ${t.pool === 'shielded' ? 'sender hidden' : 'transparent sender'}<small>${t.memo ? '“' + esc(t.memo) + '”' : (t.pool === 'shielded' ? 'no memo' : 'memos need a shielded tip')} · ${ago(t.t)}</small></span>
+        <span class="amt-v">${zecFmt(t.zec)} ZEC</span>
+      </li>`).join('');
+    allTips.forEach(t => { t.fresh = false; });
+    $('#zecTotal').textContent = allTips.reduce((a, t) => a + t.zec, 0).toFixed(2);
+  }
+  drawZecBoard();
+  setInterval(drawZecBoard, 30000);
+
+  /* ---------- copy helper ---------- */
+  function copyText(text, label) {
+    const done = () => toast(`${label} copied`);
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.append(ta); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch { ok = false; }
+      ta.remove();
+      ok ? done() : toast('Copy is blocked here. Select the text and copy it by hand.');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
+  }
+
+  /* ---------- tip dialog ---------- */
+  tipper = (() => {
+    const m = $('#tip');
+    const amtIn = $('#tipAmt'), memo = $('#tipMemo'), err = $('#tipErr');
+    const amtBtns = $$('.amt button', m), poolBtns = $$('.seg2 button', m);
+    const enc = new TextEncoder();
+    let coin = null, pool = 'shielded';
+
+    function addrFor() {
+      if (coin.zecAddr) return coin.zecAddr;
+      return demoAddr(coin.ticker, pool);
+    }
+    function allowedPools() {
+      if (!coin.zecAddr) return ['shielded', 'transparent'];
+      return [checkZec(coin.zecAddr).shielded ? 'shielded' : 'transparent'];
+    }
+    function b64url(bytes) {
+      let bin = '';
+      bytes.forEach(b => { bin += String.fromCharCode(b); });
+      return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function parseAmt() {
+      const v = amtIn.value.trim().replace(',', '.');
+      if (!/^\d*\.?\d+$/.test(v)) return { err: 'Enter an amount in ZEC, like 0.05.' };
+      if (/\.\d{9,}$/.test(v)) return { err: 'ZEC has at most 8 decimal places.' };
+      const n = Number(v);
+      if (n < 0.0001) return { err: 'The smallest tip here is 0.0001 ZEC.' };
+      if (n > 100) return { err: 'Tips here are capped at 100 ZEC.' };
+      return { n };
+    }
+    function update() {
+      const a = parseAmt();
+      const bytes = enc.encode(memo.value);
+      const memoOn = pool === 'shielded';
+      $('#memoFld').hidden = !memoOn;
+      $('#memoCount').textContent = `${bytes.length}/512 bytes`;
+      memo.setAttribute('aria-invalid', String(memoOn && bytes.length > 512));
+      amtIn.setAttribute('aria-invalid', String(!!a.err));
+      amtBtns.forEach(b => b.setAttribute('aria-checked', String(!a.err && Number(b.dataset.amt) === a.n)));
+      poolBtns.forEach(b => {
+        b.setAttribute('aria-checked', String(b.dataset.pool === pool));
+        b.disabled = !allowedPools().includes(b.dataset.pool);
+      });
+      $('#poolNote').textContent = pool === 'shielded'
+        ? 'Shielded: the sender, receiver and amount stay private on chain. The memo is encrypted for the coin owner.'
+        : 'Transparent: the tip is public on chain, like Bitcoin. Transparent tips cannot carry a memo.';
+      const addr = addrFor();
+      $('#tipAddr').textContent = addr;
+      $('#tipWarn').textContent = coin.zecAddr
+        ? `This is the ${checkZec(coin.zecAddr).kind.toLowerCase()} address the coin's launcher entered. Double-check it in your wallet before sending.`
+        : 'Demo address. It is not a real wallet, so do not send funds to it.';
+      const problem = a.err || (memoOn && bytes.length > 512 ? `The memo is ${bytes.length} bytes. Shorten it to 512 bytes or less.` : '');
+      err.hidden = !problem; err.textContent = problem;
+      $('#tipSent').disabled = !!problem;
+      if (problem) { $('#tipUsd').textContent = ''; return; }
+      $('#tipUsd').textContent = `≈ ${usd(a.n * ZEC_USD, 2)} at the example rate. All of it goes to $${coin.ticker}'s reel jar.`;
+      let uri = `zcash:${addr}?amount=${zecFmt(a.n)}`;
+      if (memoOn && bytes.length) uri += `&memo=${b64url(bytes)}`;
+      $('#tipUri').textContent = uri;
+      drawQr(uri);
+    }
+    function drawQr(uri) {
+      const box = $('#tipQr');
+      if (typeof window.qrcode !== 'function') { box.innerHTML = '<p class="qr-fallback">The QR code could not load. Copy the payment request below instead.</p>'; return; }
+      try {
+        const q = window.qrcode(0, uri.length > 600 ? 'L' : 'M');
+        q.addData(uri); q.make();
+        box.innerHTML = q.createImgTag(4, 0);
+        const img = box.querySelector('img');
+        img.alt = 'QR code for this Zcash payment request';
+      } catch { box.innerHTML = '<p class="qr-fallback">This request is too long for a QR code. Shorten the memo, or copy the request below.</p>'; }
+    }
+    amtBtns.forEach(b => b.addEventListener('click', () => { amtIn.value = b.dataset.amt; update(); }));
+    poolBtns.forEach(b => b.addEventListener('click', () => { if (!b.disabled) { pool = b.dataset.pool; update(); } }));
+    amtIn.addEventListener('input', update);
+    memo.addEventListener('input', update);
+    $('#tipCopyAddr').addEventListener('click', () => copyText(addrFor(), 'Address'));
+    $('#tipCopyUri').addEventListener('click', () => copyText($('#tipUri').textContent, 'Payment request'));
+    $('#tipSent').addEventListener('click', () => {
+      const a = parseAmt();
+      if (a.err) return;
+      const made = addTip(coin, a.n, pool, pool === 'shielded' ? memo.value.trim() : '');
+      closeModal(m);
+      toast(`Demo tip recorded: ${zecFmt(a.n)} ZEC (${usd(a.n * ZEC_USD, 2)}) went to $${coin.ticker}'s reel jar${made ? `. Reel ${coin.reels} is rendering.` : '.'}`);
+    });
+    return {
+      open(c) {
+        coin = c;
+        $('#tipCoin').textContent = '$' + c.ticker;
+        $('#tipOff').hidden = !c.tipsOff;
+        $('#tipBody').hidden = !!c.tipsOff;
+        if (!c.tipsOff) {
+          pool = allowedPools()[0];
+          amtIn.value = '0.05'; memo.value = '';
+          update();
+        }
+        openModal(m);
+      }
+    };
+  })();
+  $('#zecTry').addEventListener('click', () => tipper.open(coins.find(c => c.ticker === 'MOSSY') || coins[0]));
 
   /* ---------- header dropdowns ---------- */
   const dds = $$('.dd');
@@ -648,7 +832,18 @@
       $('#tblPay').innerHTML = payouts.map(p => `<tr><td>${new Date(p.t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td><td class="mono">0x4f2c…a91c</td><td class="r">${usd(p.v, 2)}</td></tr>`).join('')
         || '<tr><td colspan="3">No withdrawals yet.</td></tr>';
     }
-    function all() { buildPoints(); drawChart(); stats(); reelRows(); tradeRows(); payRows(); }
+    function tipRows() {
+      const tot = tipTotal(coin), sh = coin.tips.filter(t => t.pool === 'shielded').length;
+      $('#dTipZec').textContent = `${zecFmt(tot) || '0'} ZEC`;
+      $('#dTipUsd').textContent = `${usd(tot * ZEC_USD, 2)} at the example rate`;
+      $('#dTipShield').textContent = coin.tips.length ? Math.round(sh / coin.tips.length * 100) + '%' : '–';
+      $('#dTipAddr').textContent = coin.zecAddr || demoAddr(coin.ticker, 'shielded');
+      $('#tblTips').innerHTML = coin.tips.slice(0, 10).map(t => `<tr class="${t.freshDash ? 'new' : ''}"><td class="mono">${ago(t.t)}</td><td><span class="pill ${t.pool === 'shielded' ? 'shield' : 'transp'}">${t.pool === 'shielded' ? 'Shielded' : 'Transparent'}</span></td><td class="memo">${t.memo ? esc(t.memo) : '<span>–</span>'}</td><td class="r">${zecFmt(t.zec)} ZEC</td></tr>`).join('')
+        || '<tr><td colspan="4">No tips yet. Share the Tip button on the coin card.</td></tr>';
+      coin.tips.forEach(t => { t.freshDash = false; });
+      $('#setTips').checked = !coin.tipsOff;
+    }
+    function all() { buildPoints(); drawChart(); stats(); reelRows(); tradeRows(); payRows(); tipRows(); }
 
     function show(view) {
       navBtns.forEach(b => b.classList.toggle('on', b.dataset.view === view));
@@ -678,6 +873,13 @@
       toast(`Demo withdrawal of ${usd(avail, 2)}. No money moved.`);
     });
     const settings = store.get('hr-settings', {});
+    $('#setTips').addEventListener('change', e => {
+      coin.tipsOff = !e.target.checked;
+      if (coin.mine) saveMine();
+      render();
+      toast(coin.tipsOff ? `ZEC tips are off for $${coin.ticker}` : `ZEC tips are on for $${coin.ticker}`);
+    });
+    $('#dTipCopy').addEventListener('click', () => copyText($('#dTipAddr').textContent, 'Address'));
     ['setAuto', 'setRotate', 'setMail'].forEach(id => {
       const el = $('#' + id);
       if (typeof settings[id] === 'boolean') el.checked = settings[id];
@@ -686,6 +888,12 @@
 
     all();
     return {
+      onTip(c, made) {
+        if (c !== coin) return;
+        c.tips[0].freshDash = true;
+        stats(); tipRows();
+        if (made) reelRows();
+      },
       onTrade(c, size, made) {
         if (c !== coin) return;
         trades.unshift({ t: Date.now(), size, side: Math.random() < .68 ? 'buy' : 'sell', fresh: true });
@@ -698,12 +906,39 @@
     };
   })();
 
+  /* ---------- mobile menu ---------- */
+  const menuBtn = $('#menuBtn'), mobileMenu = $('#mobileMenu');
+  function closeMenu() { mobileMenu.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); menuBtn.setAttribute('aria-label', 'Open menu'); }
+  menuBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = mobileMenu.hidden;
+    mobileMenu.hidden = !open;
+    menuBtn.setAttribute('aria-expanded', String(open));
+    menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    if (open) mobileMenu.querySelector('a').focus({ preventScroll: true });
+  });
+  mobileMenu.addEventListener('click', e => { if (e.target.closest('a')) closeMenu(); });
+  document.addEventListener('click', e => { if (!mobileMenu.hidden && !e.target.closest('#mobileMenu')) closeMenu(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !mobileMenu.hidden) { closeMenu(); menuBtn.focus(); } });
+  addEventListener('resize', () => { if (innerWidth > 1080) closeMenu(); });
+
+  /* ---------- keyboard: "/" jumps to feed search ---------- */
+  document.addEventListener('keydown', e => {
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target.closest('input, textarea, [contenteditable="true"]') || $$('.modal').some(m => !m.hidden)) return;
+    e.preventDefault();
+    const fs = $('#feedSearch');
+    fs.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    fs.focus({ preventScroll: true });
+  });
+
   /* ---------- login ---------- */
   const login = $('#login');
-  $('#loginBtn').addEventListener('click', () => {
+  $$('[data-login]').forEach(b => b.addEventListener('click', () => {
+    closeMenu();
     $('#loginForm').hidden = false; $('#loginDone').hidden = true; $('#loginErr').hidden = true;
     openModal(login);
-  });
+  }));
   $('#loginForm').addEventListener('submit', e => {
     e.preventDefault();
     const em = $('#loginEmail'), v = em.value.trim();
@@ -730,7 +965,9 @@
     lfTicker.value = ticker;
     $('#lfCount').textContent = '0/80';
     lfErr.hidden = true;
-    [lfName, lfLine, lfTicker].forEach(i => i.removeAttribute('aria-invalid'));
+    [lfName, lfLine, lfTicker, $('#lfZec')].forEach(i => i.removeAttribute('aria-invalid'));
+    $('#lfZecHint').className = 'hint';
+    $('#lfZecHint').textContent = 'Leave empty to skip ZEC tips. Unified (u1), Sapling (zs1) and transparent (t1, t3) addresses work.';
     lfTicker.parentElement.classList.remove('bad');
     $('#launchForm').hidden = false; $('#launchDone').hidden = true;
   }
@@ -744,6 +981,14 @@
     try { i.setSelectionRange(p, p); } catch { /* ignore */ }
   }));
   lfLine.addEventListener('input', () => { $('#lfCount').textContent = `${lfLine.value.length}/80`; });
+  const lfZec = $('#lfZec'), lfZecHint = $('#lfZecHint');
+  const ZEC_HINT = 'Leave empty to skip ZEC tips. Unified (u1), Sapling (zs1) and transparent (t1, t3) addresses work.';
+  lfZec.addEventListener('input', () => {
+    const r = checkZec(lfZec.value);
+    lfZec.removeAttribute('aria-invalid');
+    lfZecHint.className = 'hint' + (r ? (r.err ? ' bad' : ' ok') : '');
+    lfZecHint.textContent = !r ? ZEC_HINT : r.err ? r.err : `${r.kind} address. The format looks right; this demo does not verify the checksum.`;
+  });
 
   function tickerProblem(t) {
     if (t.length < 2) return 'Tickers need 2 to 8 letters or numbers.';
@@ -810,10 +1055,13 @@
     const tp = tickerProblem(ticker);
     if (tp) return showErr(tp, lfTicker);
     if (line.length < 8) return showErr('Write a pitch line of at least 8 characters. The reels are built from it.', lfLine);
+    const zr = checkZec(lfZec.value);
+    if (zr && zr.err) return showErr(zr.err, lfZec);
     const coin = {
       name, ticker, line, reels: 0, fees: 0, fund: 0,
       color: palette[Math.floor(Math.random() * palette.length)],
-      img: imgData, last: Date.now(), created: Date.now(), mine: true
+      img: imgData, last: Date.now(), created: Date.now(), mine: true,
+      zecAddr: zr ? zr.addr : null, tipsOff: !zr, tips: []
     };
     coins.unshift(coin);
     if (!saveMine()) { /* storage unavailable: coin still shows for this visit */ }

@@ -7,6 +7,8 @@ Plain HTML, CSS and JavaScript with no build step. [Matter.js](https://brm.io/ma
 ## What works
 
 - A live coin dashboard in the hero with Overview, Reels, Trades, Payouts and Settings views, a range-switchable fee chart with hover readouts, a coin switcher, Boost and Withdraw actions, and saved settings.
+- Zcash (ZEC) tips on every coin: shielded or transparent, an encrypted memo of up to 512 bytes on shielded tips, a QR code carrying a ZIP-321 payment request, copy buttons, a live board of recent tips, a ZEC view in the dashboard, and an optional Zcash address when launching a coin (format-checked). Every tip goes into the coin's reel jar. It uses demo addresses and an example rate of 1 ZEC = $40.
+- Header dropdown menus, a mobile menu, and "/" to jump to the feed search.
 - Header dropdown menus and a demo log-in dialog with email validation.
 
 - Quick ticker launch in the hero, plus a full launch dialog with name, ticker, pitch line and image, including validation, drag and drop, and downscaling.
@@ -15,7 +17,7 @@ Plain HTML, CSS and JavaScript with no build step. [Matter.js](https://brm.io/ma
 - The reel jar: trades drop physics coins, and every $25 of reel fees funds a reel.
 - Eight reel formats with a rotation picker that never repeats the last format.
 - A simulated live feed with search, three sort orders, buy buttons and "last reel" timers.
-- A light and dark theme toggle, a scroll reveal, reduced-motion support, keyboard-accessible dialogs, and an MIT license dialog.
+- A scroll reveal, reduced-motion support, keyboard-accessible dialogs, and an MIT license dialog.
 
 ## Run locally
 

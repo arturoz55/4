@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hypereel</title>
 <meta name="description" content="Launch a coin. Its trading fees pay for AI reels that promote it. The busiest coins get the most reels.">
@@ -16,8 +17,6 @@
   <symbol id="ic-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
-  <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
-  <symbol id="ic-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
   <symbol id="ic-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v9M9.8 9.6c0-.9.9-1.4 2.2-1.4s2.2.6 2.2 1.5-.9 1.3-2.2 1.6-2.2.8-2.2 1.7.9 1.5 2.2 1.5 2.2-.5 2.2-1.4"/></symbol>
   <symbol id="ic-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></symbol>
   <symbol id="ic-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></symbol>
@@ -26,6 +25,10 @@
   <symbol id="ic-swap" viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></symbol>
   <symbol id="ic-wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M16 12.5h2M3 9h15V6"/></symbol>
   <symbol id="ic-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+  <symbol id="ic-zec" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2"/><path d="M8.6 8.2h6.8L8.6 15.8h6.8M12 5.6v2.6M12 15.8v2.6"/></symbol>
+  <symbol id="ic-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5.5c0 4.3 2.9 8 7 9.5 4.1-1.5 7-5.2 7-9.5V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
   <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
 </svg>
 
@@ -52,14 +55,24 @@
         <a href="#fees" data-jar><b>The reel jar</b><span>Drop trades, fund reels</span></a>
       </div>
     </div>
-    <a href="#how">How it works</a>
+    <a href="#zcash">ZEC tips</a>
     <a href="#feed">Feed</a>
   </nav>
   <div class="bar-actions">
-    <button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle colour theme"><svg class="ic"><use href="#ic-moon"/></svg></button>
-    <button class="btn btn-text" type="button" id="loginBtn">Log in</button>
+    <button class="btn btn-text" type="button" id="loginBtn" data-login>Log in</button>
     <button class="btn btn-primary btn-sm" type="button" data-open-launch>Launch a coin</button>
+    <button class="icon-btn menu-btn" type="button" id="menuBtn" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu"><svg class="ic"><use href="#ic-menu"/></svg></button>
   </div>
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Mobile" hidden>
+    <a href="#app">Coin dashboard</a>
+    <a href="#how">How it works</a>
+    <a href="#reel">AI reels</a>
+    <a href="#fees">Fees</a>
+    <a href="#formats">Formats</a>
+    <a href="#zcash">ZEC tips</a>
+    <a href="#feed">Feed</a>
+    <button class="btn btn-soft" type="button" data-login>Log in</button>
+  </nav>
 </header>
 
 <main id="main">
@@ -94,6 +107,7 @@
           <button type="button" class="on" data-view="overview"><svg class="ic"><use href="#ic-home"/></svg>Overview</button>
           <button type="button" data-view="reels"><svg class="ic"><use href="#ic-film"/></svg>Reels</button>
           <button type="button" data-view="trades"><svg class="ic"><use href="#ic-swap"/></svg>Trades</button>
+          <button type="button" data-view="tips"><svg class="ic"><use href="#ic-zec"/></svg>ZEC tips</button>
           <button type="button" data-view="payouts"><svg class="ic"><use href="#ic-wallet"/></svg>Payouts</button>
           <button type="button" data-view="settings"><svg class="ic"><use href="#ic-gear"/></svg>Settings</button>
         </nav>
@@ -145,6 +159,15 @@
           <h2 class="app-h">Live trades</h2>
           <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Time</th><th>Side</th><th class="r">Size</th><th class="r">Your fee</th></tr></thead><tbody id="tblTrades"></tbody></table></div>
         </div>
+        <div class="view" data-view="tips" hidden>
+          <h2 class="app-h">ZEC tips</h2>
+          <div class="tip-cards">
+            <div class="card"><p class="card-k">Received</p><p class="big sm mono" id="dTipZec">0 ZEC</p><p class="card-k mono" id="dTipUsd">$0 at the example rate</p></div>
+            <div class="card"><p class="card-k">Shielded</p><p class="big sm mono" id="dTipShield">0%</p><p class="card-k">of tips hid sender and amount</p></div>
+            <div class="card addr-card"><p class="card-k">Receiving address</p><p class="addr mono" id="dTipAddr"></p><button class="btn btn-soft btn-xs" type="button" id="dTipCopy"><svg class="ic"><use href="#ic-copy"/></svg>Copy</button></div>
+          </div>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Time</th><th>Pool</th><th>Memo</th><th class="r">Amount</th></tr></thead><tbody id="tblTips"></tbody></table></div>
+        </div>
         <div class="view" data-view="payouts" hidden>
           <h2 class="app-h">Payouts</h2>
           <div class="card payout">
@@ -158,6 +181,7 @@
           <div class="card set-list">
             <label class="sw"><span><b>Auto-post reels to the feed</b><small>New reels go live as soon as they render.</small></span><input type="checkbox" id="setAuto" checked><i></i></label>
             <label class="sw"><span><b>Rotate formats</b><small>Never use the same format twice in a row.</small></span><input type="checkbox" id="setRotate" checked><i></i></label>
+            <label class="sw"><span><b>Accept ZEC tips</b><small>Show the Tip button on this coin's card.</small></span><input type="checkbox" id="setTips" checked><i></i></label>
             <label class="sw"><span><b>Email me a weekly summary</b><small>Fees, reels and top trades.</small></span><input type="checkbox" id="setMail"><i></i></label>
           </div>
         </div>
@@ -278,6 +302,32 @@
   <p class="fine wide">Reels are made from fixed formats using only the coin's name, ticker, pitch line and image. No free-text prompts, no real people and no third-party brands. The hosts are AI. Launchers own their reels and can post them anywhere.</p>
 </section>
 
+<!-- ZCASH -->
+<section class="section zec-sec" id="zcash">
+  <div class="zec-copy reveal">
+    <p class="eyebrow"><svg class="ic"><use href="#ic-zec"/></svg> Zcash tips</p>
+    <h2 class="h2">Tip a coin in ZEC, and keep it private</h2>
+    <p class="sub">Any coin can take tips in Zcash. Every tip goes straight into the coin's reel jar, so fans can pay for the next reel without trading.</p>
+    <ul class="zec-points">
+      <li><svg class="ic"><use href="#ic-shield"/></svg><span><b>Shielded by default.</b> A shielded tip hides the sender, the receiver and the amount on chain.</span></li>
+      <li><svg class="ic"><use href="#ic-copy"/></svg><span><b>Encrypted memo.</b> Add up to 512 bytes of text that only the coin's owner can read.</span></li>
+      <li><svg class="ic"><use href="#ic-zec"/></svg><span><b>Any Zcash wallet.</b> Scan the QR code. It is a standard ZIP-321 payment request with the amount and memo filled in.</span></li>
+    </ul>
+    <div class="zec-actions">
+      <button class="btn btn-primary" type="button" id="zecTry">Tip $MOSSY in ZEC</button>
+      <a class="btn btn-soft" href="#feed">Pick another coin</a>
+    </div>
+  </div>
+  <div class="zec-board reveal" aria-label="Recent ZEC tips">
+    <div class="zec-board-head">
+      <p class="card-k">Recent tips across the feed</p>
+      <p class="zec-total mono"><span id="zecTotal">0.00</span> ZEC</p>
+    </div>
+    <ul class="zec-list" id="zecList"></ul>
+    <p class="fine">Example tips. Amounts in USD use an example rate of 1 ZEC = $40, not a live price.</p>
+  </div>
+</section>
+
 <!-- FEED -->
 <section class="section" id="feed">
   <header class="sec-head row">
@@ -311,7 +361,7 @@
 
 <footer class="foot">
   <a class="brand" href="#top"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="M10 9.2v5.6l5-2.8z"/></svg></span><span class="word">HYPEREEL</span></a>
-  <p>Hypereel, 2026. The hosts in the reels are AI. This is a demo; no real tokens are created.</p>
+  <p>Hypereel, 2026. The hosts in the reels are AI. This is a demo: no real tokens are created and no ZEC is moved. Zcash is a trademark of its respective owner; Hypereel is not affiliated with it.</p>
   <nav class="foot-nav" aria-label="Footer"><a href="#how">How it works</a><a href="#formats">Formats</a><a href="#feed">Feed</a><a href="#license" id="licenseLink">License</a></nav>
 </footer>
 
@@ -343,6 +393,11 @@
               <span id="lfDropTxt"><svg class="ic"><use href="#ic-upload"/></svg> Choose or drop a PNG, JPG or WebP under 2 MB</span>
             </label>
             <input id="lfImg" type="file" accept="image/png,image/jpeg,image/webp" class="sr">
+          </div>
+          <div class="fld full">
+            <label for="lfZec">Zcash address for tips <span class="count">optional</span></label>
+            <input id="lfZec" class="mono" maxlength="220" placeholder="u1…, zs1… or t1…" autocomplete="off" spellcheck="false">
+            <small class="hint" id="lfZecHint">Leave empty to skip ZEC tips. Unified (u1), Sapling (zs1) and transparent (t1, t3) addresses work.</small>
           </div>
         </div>
         <p class="lf-err" id="lfErr" role="alert" hidden></p>
@@ -386,6 +441,55 @@ SOFTWARE.</pre>
   </div>
 </div>
 
+<!-- TIP DIALOG -->
+<div class="modal" id="tip" role="dialog" aria-modal="true" aria-labelledby="tipTitle" hidden>
+  <div class="modal-bg" data-close></div>
+  <div class="modal-card tip-card">
+    <button class="icon-btn modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#ic-close"/></svg></button>
+    <h2 id="tipTitle" class="h3">Tip <span id="tipCoin">$MOSSY</span> in ZEC</h2>
+    <div class="tip-off" id="tipOff" hidden><p class="sub">This coin is not taking ZEC tips right now. Its owner turned them off.</p></div>
+    <div class="tip-grid" id="tipBody">
+      <div class="tip-form">
+        <p class="lbl">Amount</p>
+        <div class="amt" role="radiogroup" aria-label="Tip amount">
+          <button type="button" role="radio" aria-checked="false" data-amt="0.01">0.01</button>
+          <button type="button" role="radio" aria-checked="true" data-amt="0.05">0.05</button>
+          <button type="button" role="radio" aria-checked="false" data-amt="0.1">0.1</button>
+          <button type="button" role="radio" aria-checked="false" data-amt="0.5">0.5</button>
+        </div>
+        <div class="fld">
+          <label for="tipAmt">Custom amount in ZEC</label>
+          <input id="tipAmt" class="mono" inputmode="decimal" value="0.05" autocomplete="off">
+        </div>
+        <p class="tip-usd mono" id="tipUsd"></p>
+        <p class="lbl">Pool</p>
+        <div class="seg2" role="radiogroup" aria-label="Pool">
+          <button type="button" role="radio" aria-checked="true" data-pool="shielded"><svg class="ic"><use href="#ic-shield"/></svg>Shielded</button>
+          <button type="button" role="radio" aria-checked="false" data-pool="transparent">Transparent</button>
+        </div>
+        <p class="pool-note" id="poolNote"></p>
+        <div class="fld" id="memoFld">
+          <label for="tipMemo">Encrypted memo <span class="count mono" id="memoCount">0/512 bytes</span></label>
+          <textarea id="tipMemo" rows="2" placeholder="gm from a fan. Make the next one an unboxing."></textarea>
+        </div>
+        <p class="lf-err" id="tipErr" role="alert" hidden></p>
+      </div>
+      <div class="tip-pay">
+        <div class="qr" id="tipQr" aria-label="Payment QR code"></div>
+        <p class="lbl">Send to</p>
+        <p class="addr mono" id="tipAddr"></p>
+        <p class="demo-warn" id="tipWarn">Demo address. It is not a real wallet, so do not send funds to it.</p>
+        <div class="tip-btns">
+          <button class="btn btn-soft btn-xs" type="button" id="tipCopyAddr"><svg class="ic"><use href="#ic-copy"/></svg>Copy address</button>
+          <button class="btn btn-soft btn-xs" type="button" id="tipCopyUri"><svg class="ic"><use href="#ic-copy"/></svg>Copy payment request</button>
+        </div>
+        <details class="uri"><summary>Show ZIP-321 request</summary><code class="mono" id="tipUri"></code></details>
+        <button class="btn btn-primary btn-block" type="button" id="tipSent">I sent it (demo)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- LOGIN DIALOG -->
 <div class="modal" id="login" role="dialog" aria-modal="true" aria-labelledby="loginTitle" hidden>
   <div class="modal-bg" data-close></div>
@@ -412,6 +516,7 @@ SOFTWARE.</pre>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="main.js"></script>
 <!--BODY-END-->
 </body>
