@@ -54,21 +54,6 @@
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  /* ---------- rotating word ---------- */
-  const words = ['pitch', 'hype', 'sell', 'film'];
-  const rotWrap = $('.rot');
-  let wi = 0;
-  if (!reduced) setInterval(() => {
-    const cur = rotWrap.querySelector('span');
-    cur.classList.add('out');
-    setTimeout(() => {
-      wi = (wi + 1) % words.length;
-      const n = document.createElement('span');
-      n.id = 'rotWord'; n.className = 'holo-text in'; n.textContent = words[wi];
-      cur.replaceWith(n);
-    }, 330);
-  }, 2600);
-
   /* ---------- reveal on scroll ---------- */
   if ('IntersectionObserver' in window && !reduced) {
     const io = new IntersectionObserver(es => es.forEach(e => {
@@ -471,7 +456,9 @@
     if (c.mine) saveMine();
     render();
     pushTape(c, size);
+    if (dash) dash.onTrade(c, size, made);
   }
+  let dash = null;
   // simulated market
   setInterval(() => {
     if (document.hidden) return;
@@ -528,6 +515,208 @@
   });
   const launch = $('#launch'), license = $('#license');
   $('#licenseLink').addEventListener('click', e => { e.preventDefault(); openModal(license); });
+
+
+  /* ---------- header dropdowns ---------- */
+  const dds = $$('.dd');
+  function closeDDs(except) {
+    dds.forEach(d => {
+      if (d === except) return;
+      d.querySelector('.dd-btn').setAttribute('aria-expanded', 'false');
+      d.querySelector('.dd-menu').hidden = true;
+    });
+  }
+  dds.forEach(d => {
+    const btn = d.querySelector('.dd-btn'), menu = d.querySelector('.dd-menu');
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      closeDDs(d);
+      btn.setAttribute('aria-expanded', String(open));
+      menu.hidden = !open;
+      if (open) menu.querySelector('a').focus({ preventScroll: true });
+    });
+    menu.addEventListener('click', e => { if (e.target.closest('a')) closeDDs(); });
+    d.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !menu.hidden) { e.stopPropagation(); closeDDs(); btn.focus(); }
+    });
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('.dd')) closeDDs(); });
+  const jarLink = $('[data-jar]');
+  if (jarLink) jarLink.addEventListener('click', () => setTimeout(() => $('#trade1').focus({ preventScroll: true }), 600));
+
+  /* ---------- dashboard ---------- */
+  dash = (() => {
+    const hosts = ['Juniper', 'Rafa', 'Ines', 'Theo', 'Mika', 'Sol', 'Priya', 'Oskar', 'Lena', 'Kofi'];
+    const views = $$('.view'), navBtns = $$('.app-nav button');
+    const svg = $('#chartSvg'), tip = $('#chartTip'), chartBox = $('#chart');
+    let coin = coins.find(c => c.ticker === 'MOSSY') || coins[0];
+    let range = 7, pts = [], trades = [], payouts = [], withdrawn = 0;
+
+    // seeded random so each coin/range draws the same curve every time
+    function rng(seed) { let x = 0; for (const ch of seed) x = (x * 31 + ch.charCodeAt(0)) >>> 0; return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 4294967296); }
+    const earned = () => coin.fees * SHARE.you;
+
+    function buildPoints() {
+      const n = { 1: 24, 7: 28, 30: 30, 90: 45 }[range];
+      const r = rng(coin.ticker + range);
+      const total = earned();
+      const startFrac = { 1: .93, 7: .62, 30: .3, 90: .05 }[range];
+      let v = total * startFrac;
+      const raw = [v];
+      for (let i = 1; i < n; i++) { v += (total - v) / (n - i) * (0.4 + r() * 1.2); raw.push(v); }
+      raw[n - 1] = total;
+      const span = range * 86400000, now = Date.now();
+      pts = raw.map((val, i) => ({ v: Math.max(0, val), t: now - span + span * i / (n - 1) }));
+    }
+    function fmtT(t) {
+      const d = new Date(t);
+      return range === 1 ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    const W = 600, H = 180, PAD = 8;
+    let xy = [];
+    function drawChart() {
+      const min = Math.min(...pts.map(p => p.v)), max = Math.max(...pts.map(p => p.v));
+      const lo = min - (max - min) * .15, hi = max + (max - min) * .1 || 1;
+      xy = pts.map((p, i) => [i / (pts.length - 1) * W, PAD + (H - PAD * 2) * (1 - (p.v - lo) / (hi - lo || 1))]);
+      const line = xy.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
+      svg.innerHTML = `
+        <defs><linearGradient id="gArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--violet)" stop-opacity=".22"/><stop offset="1" stop-color="var(--violet)" stop-opacity="0"/></linearGradient></defs>
+        ${[.25, .5, .75].map(f => `<line class="grid" x1="0" x2="${W}" y1="${H * f}" y2="${H * f}"/>`).join('')}
+        <path class="area" d="${line} L${W} ${H} L0 ${H} Z"/>
+        <path class="stroke" d="${line}"/>
+        <line class="cursor" id="cur" x1="0" x2="0" y1="0" y2="${H}" visibility="hidden"/>
+        <circle class="dotp" id="curDot" r="4" cx="${xy[xy.length - 1][0]}" cy="${xy[xy.length - 1][1]}"/>`;
+      const first = pts[0].v, last = pts[pts.length - 1].v;
+      const pct = first ? (last - first) / first * 100 : 0;
+      const d = $('#dashDelta');
+      d.textContent = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% over ${range === 1 ? '24 hours' : range + ' days'}`;
+      d.classList.toggle('neg', pct < 0);
+    }
+    function hover(clientX) {
+      const r = chartBox.getBoundingClientRect();
+      const f = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+      const i = Math.round(f * (pts.length - 1));
+      const [x, y] = xy[i];
+      const cur = $('#cur'), dot = $('#curDot');
+      cur.setAttribute('x1', x); cur.setAttribute('x2', x); cur.setAttribute('visibility', 'visible');
+      dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+      tip.hidden = false;
+      tip.textContent = `${fmtT(pts[i].t)} · ${usd(pts[i].v, 2)}`;
+      const px = x / W * r.width;
+      tip.style.left = Math.min(r.width - 60, Math.max(60, px)) + 'px';
+    }
+    chartBox.addEventListener('pointermove', e => hover(e.clientX));
+    chartBox.addEventListener('pointerdown', e => hover(e.clientX));
+    chartBox.addEventListener('pointerleave', () => { tip.hidden = true; drawChart(); });
+
+    $$('.chips button').forEach(b => b.addEventListener('click', () => {
+      range = +b.dataset.range;
+      $$('.chips button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+      buildPoints(); drawChart();
+    }));
+
+    function stats() {
+      $('#dashEarned').textContent = usd(earned(), 2);
+      $('#dashJar').textContent = usd(coin.fund, 2);
+      $('#dashJarBar').style.width = (coin.fund / REEL_COST * 100) + '%';
+      $('#dashReels').textContent = coin.reels;
+      $('#dashFees').textContent = usd(coin.fees);
+      $('#dashNext').textContent = formats[(coin.reels + 1) % formats.length].n;
+      $('#payAvail').textContent = usd(Math.max(0, earned() - withdrawn), 2);
+      $('.cs-av').textContent = coin.ticker.slice(0, 2);
+      $('.cs-av').style.background = coin.color;
+      $('.cs-name').textContent = coin.name;
+      $('.app-h').textContent = `Good to see you, ${coin.name} team`;
+    }
+    function reelRows() {
+      const r = rng(coin.ticker + 'reels');
+      const rows = [];
+      for (let n = coin.reels; n > Math.max(0, coin.reels - 8); n--) {
+        const fresh = n === coin.reels && Date.now() - coin.last < 8 * 60000;
+        rows.push(`<tr><td>Reel ${n}</td><td>${formats[n % formats.length].n}</td><td>${hosts[n % hosts.length]}</td><td class="r">${fresh ? '<span class="pill rend">Rendering</span>' : Math.round(800 + r() * 24000).toLocaleString('en-US')}</td></tr>`);
+      }
+      $('#tblReels').innerHTML = rows.join('') || '<tr><td colspan="4">No reels yet. The first one renders once the jar reaches $25.</td></tr>';
+    }
+    function tradeRows() {
+      $('#tblTrades').innerHTML = trades.slice(0, 8).map((t, i) =>
+        `<tr class="${i === 0 && t.fresh ? 'new' : ''}"><td class="mono">${new Date(t.t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</td><td><span class="pill ${t.side}">${t.side === 'buy' ? 'Buy' : 'Sell'}</span></td><td class="r">${usd(t.size)}</td><td class="r">${usd(t.size * FEE * SHARE.you, 2)}</td></tr>`
+      ).join('') || '<tr><td colspan="4">Waiting for the next trade…</td></tr>';
+      trades.forEach(t => { t.fresh = false; });
+    }
+    function payRows() {
+      $('#tblPay').innerHTML = payouts.map(p => `<tr><td>${new Date(p.t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td><td class="mono">0x4f2c…a91c</td><td class="r">${usd(p.v, 2)}</td></tr>`).join('')
+        || '<tr><td colspan="3">No withdrawals yet.</td></tr>';
+    }
+    function all() { buildPoints(); drawChart(); stats(); reelRows(); tradeRows(); payRows(); }
+
+    function show(view) {
+      navBtns.forEach(b => b.classList.toggle('on', b.dataset.view === view));
+      navBtns.forEach(b => b.setAttribute('aria-current', b.dataset.view === view ? 'page' : 'false'));
+      views.forEach(v => { v.hidden = v.dataset.view !== view; });
+      if (view === 'overview') drawChart();
+    }
+    navBtns.forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
+
+    $('#coinSwitch').addEventListener('click', () => {
+      const i = coins.indexOf(coin);
+      coin = coins[(i + 1) % coins.length];
+      trades = []; payouts = []; withdrawn = 0;
+      all();
+      toast(`Showing $${coin.ticker}`);
+    });
+    $('#appBoost').addEventListener('click', () => {
+      trade(coin, 2500);
+      toast(`Demo trade: $2,500 of $${coin.ticker} added ${usd(2500 * FEE * SHARE.reels, 2)} to the reel jar.`);
+    });
+    $('#payBtn').addEventListener('click', () => {
+      const avail = Math.max(0, earned() - withdrawn);
+      if (avail < 0.01) { toast('Nothing to withdraw yet.'); return; }
+      withdrawn += avail;
+      payouts.unshift({ t: Date.now(), v: avail });
+      stats(); payRows();
+      toast(`Demo withdrawal of ${usd(avail, 2)}. No money moved.`);
+    });
+    const settings = store.get('hr-settings', {});
+    ['setAuto', 'setRotate', 'setMail'].forEach(id => {
+      const el = $('#' + id);
+      if (typeof settings[id] === 'boolean') el.checked = settings[id];
+      el.addEventListener('change', () => { settings[id] = el.checked; store.set('hr-settings', settings); toast('Setting saved'); });
+    });
+
+    all();
+    return {
+      onTrade(c, size, made) {
+        if (c !== coin) return;
+        trades.unshift({ t: Date.now(), size, side: Math.random() < .68 ? 'buy' : 'sell', fresh: true });
+        trades.length = Math.min(trades.length, 20);
+        buildPoints();
+        if (tip.hidden) drawChart();
+        stats(); tradeRows();
+        if (made) reelRows();
+      }
+    };
+  })();
+
+  /* ---------- login ---------- */
+  const login = $('#login');
+  $('#loginBtn').addEventListener('click', () => {
+    $('#loginForm').hidden = false; $('#loginDone').hidden = true; $('#loginErr').hidden = true;
+    openModal(login);
+  });
+  $('#loginForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const em = $('#loginEmail'), v = em.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) {
+      $('#loginErr').textContent = 'Enter a full email address, like you@example.com.';
+      $('#loginErr').hidden = false; em.setAttribute('aria-invalid', 'true'); em.focus(); return;
+    }
+    em.removeAttribute('aria-invalid');
+    $('#loginTo').textContent = v;
+    $('#loginForm').hidden = true; $('#loginDone').hidden = false;
+    $('#loginGo').focus();
+  });
+  $('#loginGo').addEventListener('click', () => { closeModal(login); $('#app').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' }); });
 
   /* ---------- launch form ---------- */
   const lf = $('#lf'), lfName = $('#lfName'), lfTicker = $('#lfTicker'), lfLine = $('#lfLine'), lfImg = $('#lfImg');

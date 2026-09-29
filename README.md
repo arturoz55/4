@@ -6,6 +6,9 @@ Plain HTML, CSS and JavaScript with no build step. [Matter.js](https://brm.io/ma
 
 ## What works
 
+- A live coin dashboard in the hero with Overview, Reels, Trades, Payouts and Settings views, a range-switchable fee chart with hover readouts, a coin switcher, Boost and Withdraw actions, and saved settings.
+- Header dropdown menus and a demo log-in dialog with email validation.
+
 - Quick ticker launch in the hero, plus a full launch dialog with name, ticker, pitch line and image, including validation, drag and drop, and downscaling.
 - Launched coins are saved in `localStorage` and appear at the top of the feed.
 - A live fee split (30% launcher, 50% reels, 20% house, out of a 1% fee) and a daily-volume calculator.
