@@ -17,3 +17,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Third-party notice
+
+The wallet logos in main.js come from web3icons (https://github.com/0xa3k5/web3icons),
+released under the MIT License, Copyright (c) 0xa3k5. The marks themselves belong to
+their respective wallet makers and are used only to identify each wallet.
