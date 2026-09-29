@@ -610,32 +610,6 @@ textarea[aria-invalid="true"], .fld input[aria-invalid="true"] { border-color: v
 #walletOn .btn-block { margin-top: 14px; }
 
 
-/* ---------- splash screen ---------- */
-.splash { position: fixed; inset: 0; z-index: 200; background: #000; color: #fff; display: grid; place-items: center; transition: opacity .6s var(--ease), visibility .6s; }
-.splash::before { content: ""; position: absolute; inset: 0; background: radial-gradient(50% 40% at 50% 100%, rgba(122, 92, 255, .45), transparent 70%), radial-gradient(30% 30% at 15% 90%, rgba(223, 166, 243, .25), transparent 70%); }
-.splash.out { opacity: 0; visibility: hidden; pointer-events: none; }
-.splash.out .splash-in { transform: scale(1.06); }
-.splash-in { position: relative; display: grid; justify-items: center; gap: 18px; transition: transform .6s var(--ease); }
-.splash-logo { width: 120px; height: 97px; fill: #fff; overflow: visible; }
-.splash-logo .sa { animation: spA 1s .1s var(--ease) both; }
-.splash-logo .sb { animation: spB 1s .25s var(--ease) both; }
-@keyframes spA { from { transform: translateX(-140px); opacity: 0; } }
-@keyframes spB { from { transform: translateX(140px); opacity: 0; } }
-.splash-word { margin: 6px 0 0; font: 600 18px var(--body); letter-spacing: .42em; padding-left: .42em; animation: fadeUp .8s .7s var(--ease) both; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } }
-.splash-bar { width: 180px; height: 2px; background: rgba(255,255,255,.15); border-radius: 2px; overflow: hidden; animation: fadeUp .6s .9s var(--ease) both; }
-.splash-bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8b8bff, #dfa6f3); transition: width .3s linear; }
-.splash-tag { margin: 0; font: 500 12px var(--mono); color: #a9a6d0; letter-spacing: .06em; animation: fadeUp .6s 1s var(--ease) both; min-height: 1.4em; }
-.splash-go { margin-top: 10px; display: inline-flex; align-items: center; gap: 10px; border: 0; cursor: pointer; border-radius: 999px; padding: 14px 30px; font: 600 16px var(--body); color: #0e0e16; background: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,.2), 0 12px 40px -10px rgba(139, 139, 255, .8); animation: goIn .6s var(--ease) both; transition: transform .2s var(--ease), box-shadow .2s, background .2s; }
-.splash-go:hover { background: #ecebff; transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(255,255,255,.3), 0 16px 50px -10px rgba(139, 139, 255, 1); }
-.splash-go:active { transform: scale(.97); }
-.splash-go:focus-visible { outline: 2px solid #b9a4ff; outline-offset: 4px; }
-.splash-go .ic { width: 18px; height: 18px; transition: transform .2s var(--ease); }
-.splash-go:hover .ic { transform: translateX(3px); }
-@keyframes goIn { from { opacity: 0; transform: translateY(10px) scale(.96); } }
-.splash-skip { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; text-align: center; margin: 0; font-size: 13px; color: #8a86b8; letter-spacing: .02em; }
-body.splashing { overflow: hidden; }
-
 /* ---------- cookie banner ---------- */
 .cookie { position: fixed; z-index: 45; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: 980px; margin: 0 auto; display: flex; align-items: center; gap: 20px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(14px); border-radius: 18px; padding: 16px 18px; box-shadow: 0 0 0 1px var(--line), var(--shadow-lg); animation: up .5s var(--ease) both; }
 .cookie-txt { flex: 1; min-width: 0; }

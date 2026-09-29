@@ -10,63 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=cfe105ab30">
+<link rel="stylesheet" href="style.css?v=1ec8b1d19f">
 </head>
 <body>
 <!--BODY-START-->
-<style>
-/* Critical first-paint rules: keep the page hidden behind the splash so the main page never flashes. */
-html:not(.splash-done) { background: #000; }
-html:not(.splash-done) body { background: #000; }
-html:not(.splash-done) body > :not(#splash) { visibility: hidden; }
-#splash { position: fixed; inset: 0; z-index: 200; background: #000; }
-</style>
-<noscript><style>html body > :not(#splash) { visibility: visible !important; } #splash { display: none !important; } html, html body { background: #fbfbfd !important; }</style></noscript>
-<script>
-/* Watchdog: if the app script never starts (blocked, failed or an old cached copy), open the page anyway. */
-(function () {
-  function rescue() {
-    if (window.__hpBooted) return;
-    document.documentElement.classList.add('splash-done');
-    var s = document.getElementById('splash'); if (s) s.remove();
-    document.body.classList.remove('splashing');
-  }
-  window.addEventListener('load', function () { setTimeout(rescue, 2500); });
-  setTimeout(rescue, 12000);
-})();
-</script>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="logo-mark" viewBox="0 0 136 110"><path class="lm-a" d="M0 27H80C93 27 97 0 110 0H136V27H95C82 27 78 54 65 54H0Z"/><path class="lm-b" d="M0 82H45C58 82 62 55 74 55H136V82H60C47 82 43 109 30 109H0Z"/></symbol>
-  <symbol id="ic-x" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M3.2 3h5.1l4.2 5.9L17.7 3h2.9l-6.8 7.7L21 21h-5.1l-4.6-6.4L5.6 21H2.7l7.3-8.3z"/><path fill="var(--surface)" stroke="none" d="M6 4.6h1.6l10.5 14.8h-1.6z"/></symbol>
-  <symbol id="ic-link" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
-  <symbol id="ic-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
-  <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
-  <symbol id="ic-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
-  <symbol id="ic-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v9M9.8 9.6c0-.9.9-1.4 2.2-1.4s2.2.6 2.2 1.5-.9 1.3-2.2 1.6-2.2.8-2.2 1.7.9 1.5 2.2 1.5 2.2-.5 2.2-1.4"/></symbol>
-  <symbol id="ic-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></symbol>
-  <symbol id="ic-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></symbol>
-  <symbol id="ic-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
-  <symbol id="ic-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20H4z"/><path d="M10 20v-5h4v5"/></symbol>
-  <symbol id="ic-swap" viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></symbol>
-  <symbol id="ic-wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M16 12.5h2M3 9h15V6"/></symbol>
-  <symbol id="ic-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
-  <symbol id="ic-zec" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2"/><path d="M8.6 8.2h6.8L8.6 15.8h6.8M12 5.6v2.6M12 15.8v2.6"/></symbol>
-  <symbol id="ic-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5.5c0 4.3 2.9 8 7 9.5 4.1-1.5 7-5.2 7-9.5V6z"/><path d="m9 12 2 2 4-4"/></symbol>
-  <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
-  <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
-  <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
-</svg>
-
-<div class="splash" id="splash" role="dialog" aria-modal="true" aria-label="Welcome to Hyperpad">
-  <div class="splash-in">
-    <svg class="splash-logo" viewBox="0 0 136 110" aria-hidden="true"><path class="sa" d="M0 27H80C93 27 97 0 110 0H136V27H95C82 27 78 54 65 54H0Z"/><path class="sb" d="M0 82H45C58 82 62 55 74 55H136V82H60C47 82 43 109 30 109H0Z"/></svg>
-    <p class="splash-word">HYPERPAD</p>
-    <div class="splash-bar"><span id="splashBar"></span></div>
-    <p class="splash-tag" id="splashTag" role="status">Loading the feed…</p>
-    <button class="splash-go" id="splashGo" type="button" hidden>Continue <svg class="ic" aria-hidden="true"><use href="#ic-arrow"/></svg></button>
-  </div>
-  <p class="splash-skip">Launch a coin. Let the reels sell it.</p>
-</div>
 <a class="skip" href="#main">Skip to content</a>
 <div class="progress-top" id="scrollProg" aria-hidden="true"></div>
 
@@ -738,7 +685,7 @@ SOFTWARE.</pre>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
-<script src="main.js?v=d3308c678b"></script>
+<script src="main.js?v=38f5e8097f"></script>
 <!--BODY-END-->
 </body>
 </html>
