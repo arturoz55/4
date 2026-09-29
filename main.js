@@ -9,7 +9,7 @@
   /* ---------- splash screen ---------- */
   const splash = document.getElementById('splash');
   const splashDone = new Promise(resolve => {
-    if (!splash) return resolve();
+    if (!splash) { document.documentElement.classList.add('splash-done'); return resolve(); }
     document.body.classList.add('splashing');
     const bar = document.getElementById('splashBar'), tag = document.getElementById('splashTag');
     const tags = ['Loading the feed…', 'Waking up the hosts…', 'Filling the reel jars…', 'Ready'];
@@ -27,6 +27,7 @@
       if (closed) return;
       closed = true; clearInterval(tick);
       bar.style.width = '100%';
+      document.documentElement.classList.add('splash-done'); // reveal the page underneath as the splash fades
       splash.classList.add('out');
       document.body.classList.remove('splashing');
       setTimeout(() => { splash.remove(); resolve(); }, 650);
