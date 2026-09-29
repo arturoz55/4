@@ -12,7 +12,7 @@
 | `images/hyperpad-reel.png` | 1080×1350 example reel | Tweet 2 |
 | `images/hyperpad-zec.png` | 1080×1080 ZEC tips | Tweet 3 |
 
-Fill in `[CA]`, `[link]` and your real handle before posting. The ticker used throughout is `$HPAD`.
+Fill in `[CA]` and `[link]` before posting. The X account is https://x.com/UseHyperpad. The ticker used throughout is `$HPAD`.
 
 ## Regenerating
 

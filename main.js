@@ -1138,6 +1138,193 @@
     fs.focus({ preventScroll: true });
   });
 
+
+  /* ---------- wallet connect (read-only: address only, no signing) ---------- */
+  const wallet = (() => {
+    const m = $('#wallet'), btn = $('#walletBtn'), label = $('#walletLabel'), err = $('#walletErr');
+    const WALLETS = [
+      { id: 'phantom', name: 'Phantom', chain: 'sol', color: '#ab9ff2', ini: 'P', url: 'https://phantom.com/download',
+        get: () => (window.phantom && window.phantom.solana && window.phantom.solana.isPhantom) ? window.phantom.solana : (window.solana && window.solana.isPhantom ? window.solana : null) },
+      { id: 'solflare', name: 'Solflare', chain: 'sol', color: '#fc822b', ini: 'S', url: 'https://solflare.com/download',
+        get: () => (window.solflare && window.solflare.isSolflare) ? window.solflare : null },
+      { id: 'backpack', name: 'Backpack', chain: 'sol', color: '#e33e3f', ini: 'B', url: 'https://backpack.app/download',
+        get: () => (window.backpack && (window.backpack.solana || window.backpack)) || null },
+      { id: 'metamask', name: 'MetaMask', chain: 'evm', rdns: 'io.metamask', color: '#f6851b', ini: 'M', url: 'https://metamask.io/download/', legacy: p => p.isMetaMask && !p.isRabby && !p.isBraveWallet && !p.isCoinbaseWallet },
+      { id: 'coinbase', name: 'Coinbase Wallet', chain: 'evm', rdns: 'com.coinbase.wallet', color: '#0052ff', ini: 'C', url: 'https://www.coinbase.com/wallet/downloads', legacy: p => p.isCoinbaseWallet },
+      { id: 'rabby', name: 'Rabby', chain: 'evm', rdns: 'io.rabby', color: '#7084ff', ini: 'R', url: 'https://rabby.io/', legacy: p => p.isRabby }
+    ];
+    // EIP-6963: installed EVM wallets announce themselves with a name, icon and provider
+    const announced = new Map();
+    addEventListener('eip6963:announceProvider', e => {
+      const d = e.detail;
+      if (d && d.info && d.info.rdns && d.provider) { announced.set(d.info.rdns, d); if (!m.hidden && !state) drawList(); }
+    });
+    dispatchEvent(new Event('eip6963:requestProvider'));
+
+    function evmProvider(w) {
+      if (w.rdns && announced.has(w.rdns)) return announced.get(w.rdns).provider;
+      if (w.provider) return w.provider;
+      const eth = window.ethereum;
+      if (!eth || !w.legacy) return null;
+      const list = Array.isArray(eth.providers) ? eth.providers : [eth];
+      return list.find(w.legacy) || null;
+    }
+    const providerFor = w => w.chain === 'sol' ? w.get() : evmProvider(w);
+    function allWallets() {
+      const extra = [...announced.values()].filter(d => !WALLETS.some(w => w.rdns === d.info.rdns)).map(d => ({
+        id: 'eip:' + d.info.rdns, name: String(d.info.name || 'Browser wallet').slice(0, 40), chain: 'evm', rdns: d.info.rdns, color: '#5b5bf0',
+        ini: String(d.info.name || 'W').slice(0, 1).toUpperCase(), icon: /^data:image\//.test(d.info.icon || '') ? d.info.icon : null, provider: d.provider
+      }));
+      return WALLETS.concat(extra);
+    }
+    function iconHTML(w) {
+      const a = w.rdns && announced.get(w.rdns);
+      const src = w.icon || (a && /^data:image\//.test(a.info.icon || '') ? a.info.icon : null);
+      return `<span class="wicon" style="background:${w.color}">${src ? `<img src="${esc(src)}" alt="">` : esc(w.ini)}</span>`;
+    }
+    function drawList() {
+      const ws = allWallets();
+      ['sol', 'evm'].forEach(ch => {
+        const box = $(ch === 'sol' ? '#wlSol' : '#wlEvm');
+        box.innerHTML = '';
+        ws.filter(w => w.chain === ch).forEach(w => {
+          const has = !!providerFor(w);
+          const el = document.createElement(has ? 'button' : 'a');
+          el.className = 'wopt';
+          if (has) { el.type = 'button'; el.addEventListener('click', () => connect(w, el)); }
+          else { el.href = w.url; el.target = '_blank'; el.rel = 'noopener noreferrer'; }
+          el.innerHTML = `${iconHTML(w)}<b>${esc(w.name)}</b><small class="${has ? 'ok' : ''}">${has ? 'Detected' : 'Install ↗'}</small>`;
+          box.append(el);
+        });
+      });
+    }
+    const short = a => a.length > 12 ? a.slice(0, 5) + '…' + a.slice(-4) : a;
+    let state = null, bound = null;
+
+    function setState(next, silent) {
+      state = next;
+      if (state) {
+        btn.classList.add('on');
+        label.textContent = short(state.addr);
+        if (!btn.querySelector('.wdot')) btn.insertAdjacentHTML('afterbegin', '<i class="wdot" aria-hidden="true"></i>');
+        btn.setAttribute('aria-label', `Wallet connected: ${state.addr}`);
+        $('#dashWallet').textContent = short(state.addr);
+        store.set('hp-wallet', { id: state.id, chain: state.chain });
+        if (!silent) toast(`${state.name} connected: ${short(state.addr)}`);
+      } else {
+        btn.classList.remove('on');
+        label.textContent = 'Connect wallet';
+        btn.querySelector('.wdot')?.remove();
+        btn.removeAttribute('aria-label');
+        $('#dashWallet').textContent = '0x4f2c…a91c';
+        store.set('hp-wallet', null);
+      }
+      drawOn();
+    }
+    function drawOn() {
+      $('#walletPick').hidden = !!state; $('#walletOn').hidden = !state;
+      if (!state) return;
+      $('#wOnIcon').outerHTML = iconHTML(state).replace('class="wicon"', 'class="wicon" id="wOnIcon"');
+      $('#wOnName').textContent = `${state.name} · ${state.chain === 'sol' ? 'Solana' : state.chainName}`;
+      $('#wOnAddr').textContent = state.addr;
+      $('#wExplorer').href = state.chain === 'sol' ? `https://solscan.io/account/${encodeURIComponent(state.addr)}` : `${state.explorer}/address/${encodeURIComponent(state.addr)}`;
+    }
+    const CHAINS = { '0x1': ['Ethereum', 'https://etherscan.io'], '0x2105': ['Base', 'https://basescan.org'], '0xa4b1': ['Arbitrum', 'https://arbiscan.io'], '0xa': ['Optimism', 'https://optimistic.etherscan.io'], '0x89': ['Polygon', 'https://polygonscan.com'], '0x38': ['BNB Chain', 'https://bscscan.com'] };
+    async function evmMeta(prov) {
+      let id = '0x1';
+      try { id = String(await prov.request({ method: 'eth_chainId' })).toLowerCase(); } catch { /* keep default */ }
+      const c = CHAINS[id] || ['EVM chain ' + parseInt(id, 16), 'https://etherscan.io'];
+      return { chainName: c[0], explorer: c[1] };
+    }
+    function bind(w, prov) {
+      unbind();
+      if (!prov || !prov.on) return;
+      if (w.chain === 'evm') {
+        const onAcc = accs => { if (!accs || !accs.length) setState(null); else if (state) setState({ ...state, addr: accs[0] }, true); };
+        const onChain = async () => { if (state) setState({ ...state, ...(await evmMeta(prov)) }, true); };
+        prov.on('accountsChanged', onAcc); prov.on('chainChanged', onChain);
+        bound = () => { prov.removeListener?.('accountsChanged', onAcc); prov.removeListener?.('chainChanged', onChain); };
+      } else {
+        const onAcc = pk => { if (!pk) setState(null); else if (state) setState({ ...state, addr: pk.toString() }, true); };
+        const onDis = () => setState(null);
+        prov.on('accountChanged', onAcc); prov.on('disconnect', onDis);
+        bound = () => { prov.off?.('accountChanged', onAcc) || prov.removeListener?.('accountChanged', onAcc); prov.off?.('disconnect', onDis) || prov.removeListener?.('disconnect', onDis); };
+      }
+    }
+    function unbind() { if (bound) { try { bound(); } catch { /* ignore */ } bound = null; } }
+
+    async function connect(w, el) {
+      const prov = providerFor(w);
+      if (!prov) { window.open(w.url, '_blank', 'noopener'); return; }
+      err.hidden = true;
+      el.setAttribute('aria-busy', 'true');
+      el.querySelector('small').textContent = 'Check your wallet…';
+      try {
+        let addr, meta = {};
+        if (w.chain === 'sol') {
+          const r = await prov.connect();
+          const pk = (r && r.publicKey) || prov.publicKey;
+          if (!pk) throw new Error('The wallet did not share an address.');
+          addr = pk.toString();
+        } else {
+          const accs = await prov.request({ method: 'eth_requestAccounts' });
+          if (!accs || !accs.length) throw new Error('The wallet did not share an address.');
+          addr = accs[0];
+          meta = await evmMeta(prov);
+        }
+        bind(w, prov);
+        setState({ id: w.id, name: w.name, chain: w.chain, color: w.color, ini: w.ini, icon: w.icon, rdns: w.rdns, addr, ...meta });
+      } catch (e) {
+        const rejected = e && (e.code === 4001 || /reject|denied|cancel/i.test(e.message || ''));
+        err.textContent = rejected ? `You cancelled the request in ${w.name}. Try again when you're ready.` : `${w.name} could not connect: ${(e && e.message) || 'unknown error'}.`;
+        err.hidden = false;
+      } finally {
+        el.removeAttribute('aria-busy');
+        drawList();
+      }
+    }
+    async function disconnect() {
+      if (!state) return;
+      const w = allWallets().find(x => x.id === state.id), prov = w && providerFor(w);
+      unbind();
+      try {
+        if (state.chain === 'sol' && prov && prov.disconnect) await prov.disconnect();
+        if (state.chain === 'evm' && prov) await prov.request({ method: 'wallet_revokePermissions', params: [{ eth_accounts: {} }] });
+      } catch { /* not every wallet supports revoking; clearing local state is enough */ }
+      const name = state.name;
+      setState(null);
+      drawList();
+      toast(`${name} disconnected`);
+    }
+    // restore a previous connection without prompting
+    async function restore() {
+      const saved = store.get('hp-wallet', null);
+      if (!saved || !saved.id) return;
+      await new Promise(r => setTimeout(r, 300)); // give EIP-6963 wallets time to announce
+      const w = allWallets().find(x => x.id === saved.id), prov = w && providerFor(w);
+      if (!prov) return;
+      try {
+        let addr = null, meta = {};
+        if (w.chain === 'sol') {
+          const r = await prov.connect({ onlyIfTrusted: true });
+          const pk = (r && r.publicKey) || prov.publicKey; addr = pk && pk.toString();
+        } else {
+          const accs = await prov.request({ method: 'eth_accounts' });
+          addr = accs && accs[0]; if (addr) meta = await evmMeta(prov);
+        }
+        if (addr) { bind(w, prov); setState({ id: w.id, name: w.name, chain: w.chain, color: w.color, ini: w.ini, icon: w.icon, rdns: w.rdns, addr, ...meta }, true); }
+      } catch { /* the wallet wants a fresh prompt; stay disconnected */ }
+    }
+
+    function open() { closeMenu(); err.hidden = true; drawList(); drawOn(); openModal(m); }
+    btn.addEventListener('click', open);
+    $$('[data-wallet]').forEach(b => b.addEventListener('click', open));
+    $('#wCopy').addEventListener('click', () => state && copyText(state.addr, 'Address'));
+    $('#wDisconnect').addEventListener('click', disconnect);
+    restore();
+    return { get: () => state };
+  })();
+
   /* ---------- login ---------- */
   const login = $('#login');
   $$('[data-login]').forEach(b => b.addEventListener('click', () => {

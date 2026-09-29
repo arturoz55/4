@@ -585,6 +585,30 @@ textarea[aria-invalid="true"], .fld input[aria-invalid="true"] { border-color: v
 .foot-col a:hover, .linkish:hover { color: var(--violet); }
 .foot-legal { margin: 0; font-size: 12px; border-top: 1px solid var(--line); padding-top: 20px; }
 
+
+/* ---------- header boxes: wallet + X ---------- */
+.box-btn { height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; border-radius: 12px; border: 0; cursor: pointer; background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--ink); font-size: 14px; font-weight: 500; text-decoration: none; box-shadow: 0 0 0 1px var(--line), 0 4px 12px -8px rgba(27, 28, 43, .3); transition: box-shadow .2s, transform .2s var(--ease), background .2s; white-space: nowrap; }
+.box-btn:hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--violet) 55%, var(--line)), 0 8px 18px -10px rgba(91, 91, 240, .45); transform: translateY(-1px); }
+.box-btn .ic { width: 17px; height: 17px; }
+.x-btn { width: 38px; padding: 0; }
+.x-btn .ic { width: 16px; height: 16px; }
+.wallet-btn.on { background: var(--violet-soft); color: var(--violet); }
+.wallet-btn .wdot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 25%, transparent); }
+.wallet-sub { margin: 0 0 18px; font-size: 14px; }
+.wlist { display: grid; gap: 6px; margin-bottom: 16px; }
+.wopt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; border-radius: 12px; background: var(--sunk); cursor: pointer; text-align: left; font-size: 15px; text-decoration: none; color: var(--ink); transition: background .15s, box-shadow .15s; }
+.wopt:hover, .wopt:focus-visible { background: var(--surface); box-shadow: 0 0 0 1px var(--violet); }
+.wopt[aria-busy="true"] { opacity: .7; cursor: progress; }
+.wopt b { flex: 1; font-weight: 500; }
+.wopt small { font-size: 12px; color: var(--muted); }
+.wopt small.ok { color: var(--good); font-weight: 500; }
+.wicon { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: #fff; font: 700 13px var(--body); flex: none; overflow: hidden; }
+.wicon img { width: 100%; height: 100%; object-fit: cover; }
+.wconn { display: flex; gap: 12px; align-items: center; background: var(--sunk); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.wconn > div { min-width: 0; }
+.wconn b { font-weight: 500; }
+#walletOn .btn-block { margin-top: 14px; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1500px) { .fchip.left { right: auto; left: 214px; top: auto !important; bottom: 18px; } .fchip.right { display: none; } }
 @media (max-width: 1080px) {
@@ -617,6 +641,12 @@ textarea[aria-invalid="true"], .fld input[aria-invalid="true"] { border-color: v
   .feed-tools, .search { width: 100%; }
   .search input { width: 100%; }
   .tabs { overflow-x: auto; max-width: 100%; }
+}
+@media (max-width: 640px) {
+  .wallet-btn span { display: none; }
+  .wallet-btn { width: 38px; padding: 0; }
+  .wallet-btn .wdot { position: absolute; margin: -22px -22px 0 0; }
+  .wallet-btn { position: relative; }
 }
 @media (max-width: 480px) {
   .bar { gap: 8px; }

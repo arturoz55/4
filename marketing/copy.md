@@ -1,6 +1,6 @@
 # Hyperpad: X copy
 
-Placeholders to fill in before posting: `[CA]` (contract address), `[link]` (site URL), `@hyperpad` (your real handle). Ticker is `$HPAD`; change it everywhere if yours is different.
+Placeholders to fill in before posting: `[CA]` (contract address), `[link]` (site URL), `@UseHyperpad` is already set as the X handle. Ticker is `$HPAD`; change it everywhere if yours is different.
 
 Only post claims that are true of your live product. The page in this repo is a demo: fees, reels and ZEC tips are simulated there.
 

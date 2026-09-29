@@ -16,6 +16,8 @@
 <!--BODY-START-->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="logo-mark" viewBox="0 0 136 110"><path class="lm-a" d="M0 27H80C93 27 97 0 110 0H136V27H95C82 27 78 54 65 54H0Z"/><path class="lm-b" d="M0 82H45C58 82 62 55 74 55H136V82H60C47 82 43 109 30 109H0Z"/></symbol>
+  <symbol id="ic-x" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M3.2 3h5.1l4.2 5.9L17.7 3h2.9l-6.8 7.7L21 21h-5.1l-4.6-6.4L5.6 21H2.7l7.3-8.3z"/><path fill="var(--surface)" stroke="none" d="M6 4.6h1.6l10.5 14.8h-1.6z"/></symbol>
+  <symbol id="ic-link" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
   <symbol id="ic-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
@@ -62,6 +64,8 @@
     <a href="#feed">Feed</a>
   </nav>
   <div class="bar-actions">
+    <button class="box-btn wallet-btn" type="button" id="walletBtn" aria-haspopup="dialog"><svg class="ic"><use href="#ic-wallet"/></svg><span id="walletLabel">Connect wallet</span></button>
+    <a class="box-btn x-btn" href="https://x.com/UseHyperpad" target="_blank" rel="noopener noreferrer" aria-label="Hyperpad on X (opens in a new tab)" title="@UseHyperpad on X"><svg class="ic"><use href="#ic-x"/></svg></a>
     <button class="btn btn-text" type="button" id="loginBtn" data-login>Log in</button>
     <button class="btn btn-primary btn-sm" type="button" data-open-launch>Launch a coin</button>
     <button class="icon-btn menu-btn" type="button" id="menuBtn" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu"><svg class="ic"><use href="#ic-menu"/></svg></button>
@@ -74,6 +78,8 @@
     <a href="#formats">Formats</a>
     <a href="#zcash">ZEC tips</a>
     <a href="#feed">Feed</a>
+    <a href="https://x.com/UseHyperpad" target="_blank" rel="noopener noreferrer">Follow @UseHyperpad on X ↗</a>
+    <button class="btn btn-primary" type="button" data-wallet>Connect wallet</button>
     <button class="btn btn-soft" type="button" data-login>Log in</button>
   </nav>
 </header>
@@ -154,7 +160,7 @@
                 <div><dt>Reels made</dt><dd class="mono" id="dashReels">0</dd></div>
                 <div><dt>Total fees</dt><dd class="mono" id="dashFees">$0</dd></div>
                 <div><dt>Next format</dt><dd id="dashNext">Unboxing</dd></div>
-                <div><dt>Payout wallet</dt><dd class="mono">0x4f2c…a91c</dd></div>
+                <div><dt>Payout wallet</dt><dd class="mono" id="dashWallet">0x4f2c…a91c</dd></div>
               </dl>
             </div>
           </div>
@@ -409,6 +415,7 @@
     </div>
     <nav class="foot-col" aria-label="Product"><p>Product</p><a href="#app">Dashboard</a><a href="#reel">AI reels</a><a href="#formats">Formats</a><a href="#feed">Feed</a></nav>
     <nav class="foot-col" aria-label="Money"><p>Money</p><a href="#fees">Fee calculator</a><a href="#zcash">ZEC tips</a><a href="#faq">FAQ</a></nav>
+    <nav class="foot-col" aria-label="Community"><p>Community</p><a href="https://x.com/UseHyperpad" target="_blank" rel="noopener noreferrer">X · @UseHyperpad ↗</a><button type="button" class="linkish" data-wallet>Connect wallet</button></nav>
     <nav class="foot-col" aria-label="Legal"><p>Legal</p><a href="#license" id="licenseLink">License</a><button type="button" class="linkish" id="toTop">Back to top ↑</button></nav>
   </div>
   <p class="foot-legal">Hyperpad, 2026. The hosts in the reels are AI. This is a demo: no real tokens are created and no ZEC is moved. Zcash is a trademark of its respective owner; Hyperpad is not affiliated with it.</p>
@@ -573,6 +580,37 @@ SOFTWARE.</pre>
       <button class="icon-btn light" type="button" id="plNext" aria-label="Next coin"><svg class="ic"><use href="#ic-chev"/></svg></button>
     </div>
     <p class="pl-hint">Use the arrow keys or swipe up and down. Double-tap to like.</p>
+  </div>
+</div>
+
+<!-- WALLET DIALOG -->
+<div class="modal" id="wallet" role="dialog" aria-modal="true" aria-labelledby="walletTitle" hidden>
+  <div class="modal-bg" data-close></div>
+  <div class="modal-card narrow">
+    <button class="icon-btn modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#ic-close"/></svg></button>
+    <div id="walletPick">
+      <h2 id="walletTitle" class="h3">Connect a wallet</h2>
+      <p class="sub wallet-sub">Hyperpad only reads your public address. It never asks you to sign or send anything from this page.</p>
+      <p class="lbl">Solana</p>
+      <div class="wlist" id="wlSol"></div>
+      <p class="lbl">Ethereum and EVM</p>
+      <div class="wlist" id="wlEvm"></div>
+      <p class="lf-err" id="walletErr" role="alert" hidden></p>
+      <p class="fine" id="walletHint">No wallet here? Wallet extensions only work in a desktop browser with the extension installed, or inside the wallet app's own browser on a phone.</p>
+    </div>
+    <div id="walletOn" hidden>
+      <h2 class="h3">Wallet connected</h2>
+      <div class="wconn">
+        <span class="wicon" id="wOnIcon"></span>
+        <div><b id="wOnName">Phantom</b><p class="mono addr" id="wOnAddr"></p></div>
+      </div>
+      <div class="tip-btns">
+        <button class="btn btn-soft btn-xs" type="button" id="wCopy"><svg class="ic"><use href="#ic-copy"/></svg>Copy address</button>
+        <a class="btn btn-soft btn-xs" id="wExplorer" href="#" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#ic-link"/></svg>View on explorer</a>
+      </div>
+      <p class="fine">Your address is now shown as the payout wallet in the dashboard.</p>
+      <button class="btn btn-line btn-block" type="button" id="wDisconnect">Disconnect</button>
+    </div>
   </div>
 </div>
 
