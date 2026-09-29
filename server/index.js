@@ -36,6 +36,7 @@ for (const [f, type] of Object.entries(FILES)) {
   const body = fs.readFileSync(new URL(f, ROOT));
   assets[f] = { body, type, v: crypto.createHash('sha256').update(body).digest('hex').slice(0, 10) };
 }
+app.assetVersions = Object.fromEntries(Object.entries(assets).map(([f, a]) => [f, a.v]));
 let html = fs.readFileSync(new URL('index.html', ROOT), 'utf8');
 for (const f of Object.keys(assets)) html = html.replace(new RegExp(`"${f.replace('.', '\\.')}(\\?v=[a-f0-9]*)?"`, 'g'), `"/${f}?v=${assets[f].v}"`);
 app.get('/', (req, reply) => reply.header('cache-control', 'no-cache').type('text/html; charset=utf-8').send(html));

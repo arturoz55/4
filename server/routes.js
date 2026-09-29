@@ -4,7 +4,7 @@ import { config } from './config.js';
 import { q, one } from './db.js';
 import { client, abi } from './chain.js';
 import { subscribe } from './events.js';
-import { ethUsd } from './price.js';
+import { ethUsdNow } from './price.js';
 import { newNonce, messageFor, verifySignIn, sessionToken, readSession } from './auth.js';
 import { verifyCallback, completeReel } from './reels.js';
 
@@ -48,10 +48,12 @@ const addrParam = a => { if (!isAddress(a)) throw bad('Not a valid address.'); r
 
 export default async function routes(app) {
   app.get('/api/health', async () => ({ ok: true }));
+  // Which build is running (Railway sets RAILWAY_GIT_COMMIT_SHA for GitHub deploys).
+  app.get('/api/version', async () => ({ commit: process.env.RAILWAY_GIT_COMMIT_SHA || null, branch: process.env.RAILWAY_GIT_BRANCH || null, assets: app.assetVersions || null }));
 
   app.get('/api/config', async () => ({
     chain: config.chain, launchpad: config.launchpad, reelCostUsd: config.reelCostUsd, feeBps: 100,
-    split: { creator: 0.3, reels: 0.5, protocol: 0.2 }, videoProvider: config.videoProvider, ethUsd: await ethUsd()
+    split: { creator: 0.3, reels: 0.5, protocol: 0.2 }, videoProvider: config.videoProvider, ethUsd: ethUsdNow()
   }));
 
   app.get('/api/stats', async () => {

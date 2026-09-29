@@ -2,6 +2,12 @@
 import { config } from './config.js';
 
 let cached = { usd: config.ethUsdFallback, at: 0 };
+let inflight = null;
+/** Last known price without waiting on the network (refreshes in the background). */
+export function ethUsdNow() {
+  if (config.priceSource !== 'fixed' && Date.now() - cached.at >= 60_000 && !inflight) inflight = ethUsd().finally(() => { inflight = null; });
+  return config.priceSource === 'fixed' ? config.ethUsdFallback : cached.usd;
+}
 export async function ethUsd() {
   if (config.priceSource === 'fixed') return config.ethUsdFallback;
   if (Date.now() - cached.at < 60_000) return cached.usd;
