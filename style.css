@@ -640,6 +640,9 @@ body.splashing { overflow: hidden; }
 .sw:has(input:disabled) { cursor: default; }
 @media (max-width: 760px) { .cookie { flex-direction: column; align-items: stretch; gap: 12px; } .cookie-acts { justify-content: stretch; } .cookie-acts .btn { flex: 1; } }
 
+.qa, .fchip i, .cs-av { overflow: hidden; }
+.qa img, .fchip i img, .cs-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1500px) { .fchip.left { right: auto; left: 214px; top: auto !important; bottom: 18px; } .fchip.right { display: none; } }
 @media (max-width: 1080px) {

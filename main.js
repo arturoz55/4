@@ -415,6 +415,22 @@
     }
   }
 
+
+  /* ---------- coin artwork: original illustrations for the example coins ---------- */
+  const ART = {
+    MOSSY: `<rect width="64" height="64" fill="#1f7a4a"/><circle cx="50" cy="12" r="16" fill="#2c9960"/><path d="M8 52c0-14 10-24 24-24s24 10 24 24z" fill="#7bd36b"/><path d="M8 52c2-6 6-7 9-5 1-5 6-7 9-3 2-5 8-6 11-1 3-4 8-3 10 2 3-2 7 0 9 7z" fill="#5bbd57"/><circle cx="25" cy="40" r="3" fill="#123"/><circle cx="39" cy="40" r="3" fill="#123"/><circle cx="26" cy="39" r="1" fill="#fff"/><circle cx="40" cy="39" r="1" fill="#fff"/><path d="M29 46q3 3 6 0" stroke="#123" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M32 28v-8M32 22q-5-3-7 1M32 20q5-4 8 0" stroke="#3a8f3a" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+    PBBL: `<rect width="64" height="64" fill="#f1e6d6"/><ellipse cx="32" cy="54" rx="20" ry="4" fill="#d8c8b0"/><path d="M12 40c0-12 9-20 21-20s19 8 19 18-8 16-20 16-20-4-20-14z" fill="#8f98a6"/><path d="M18 36c2-7 8-11 15-11" stroke="#c4cbd4" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M22 20l3-8 7 6 7-6 3 8z" fill="#f2b632"/><circle cx="25" cy="12" r="2" fill="#f2b632"/><circle cx="32" cy="17" r="2" fill="#f2b632"/><circle cx="39" cy="12" r="2" fill="#f2b632"/>`,
+    NITE: `<rect width="64" height="64" fill="#101637"/><circle cx="12" cy="12" r="1.2" fill="#fff"/><circle cx="52" cy="20" r="1" fill="#fff"/><circle cx="44" cy="8" r="1.4" fill="#fff"/><circle cx="8" cy="34" r="1" fill="#fff"/><path d="M40 10a15 15 0 1 0 12 24 12 12 0 1 1-12-24z" fill="#ffd66b"/><path d="M14 40h22v10a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6z" fill="#e9eefc"/><path d="M36 43h3a4 4 0 0 1 0 8h-3" stroke="#e9eefc" stroke-width="3" fill="none"/><path d="M20 36q2-3 0-6M26 36q2-3 0-6M32 36q2-3 0-6" stroke="#9aa6d6" stroke-width="1.8" fill="none" stroke-linecap="round"/>`,
+    SOUP: `<rect width="64" height="64" fill="#f59f2a"/><path d="M22 20q3-4 0-8M32 20q3-4 0-8M42 20q3-4 0-8" stroke="#fff4e0" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M8 30h48a24 22 0 0 1-48 0z" fill="#fff"/><ellipse cx="32" cy="30" rx="24" ry="5" fill="#e0512b"/><circle cx="25" cy="30" r="2" fill="#ffd166"/><circle cx="36" cy="29" r="1.6" fill="#7bd36b"/><circle cx="42" cy="31" r="1.4" fill="#ffd166"/><path d="M44 18l10-12" stroke="#b86b1a" stroke-width="3" stroke-linecap="round"/><rect x="24" y="50" width="16" height="4" rx="2" fill="#f7e2c4"/>`,
+    CGOAT: `<rect width="64" height="64" fill="#8fc9ff"/><circle cx="50" cy="14" r="7" fill="#fff6c2"/><path d="M8 50a10 10 0 0 1 8-15 13 13 0 0 1 25-3 10 10 0 0 1 15 9 7 7 0 0 1-2 14H14a7 7 0 0 1-6-5z" fill="#fff"/><path d="M24 30q-6-8-2-14M40 30q6-8 2-14" stroke="#b58a5a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="32" cy="34" rx="9" ry="11" fill="#f3efe8"/><ellipse cx="21" cy="30" rx="4" ry="2" fill="#e2dccf" transform="rotate(-20 21 30)"/><ellipse cx="43" cy="30" rx="4" ry="2" fill="#e2dccf" transform="rotate(20 43 30)"/><circle cx="28" cy="32" r="1.8" fill="#222"/><circle cx="36" cy="32" r="1.8" fill="#222"/><ellipse cx="32" cy="40" rx="3" ry="2" fill="#f2a7b5"/><path d="M32 45l-2 5h4z" fill="#e2dccf"/>`,
+    LAMP: `<rect width="64" height="64" fill="#0c5566"/><path d="M36 22 58 64H14z" fill="#ffe28a" opacity=".28"/><path d="M24 12 42 6l6 16-18 6z" fill="#ffc94d"/><path d="M28 26 18 44" stroke="#dfe8ea" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="26" r="3" fill="#dfe8ea"/><circle cx="18" cy="44" r="3" fill="#dfe8ea"/><path d="M18 44v8" stroke="#dfe8ea" stroke-width="3"/><rect x="10" y="52" width="18" height="4" rx="2" fill="#dfe8ea"/><circle cx="39" cy="22" r="3" fill="#fff6c2"/>`,
+    ORBS: `<rect width="64" height="64" fill="#2b1a55"/><circle cx="10" cy="14" r="1" fill="#fff"/><circle cx="54" cy="10" r="1.3" fill="#fff"/><circle cx="56" cy="46" r="1" fill="#fff"/><ellipse cx="32" cy="36" rx="27" ry="8" fill="none" stroke="#b9a4ff" stroke-width="2" transform="rotate(-14 32 36)"/><circle cx="36" cy="32" r="12" fill="#ff9fb7"/><path d="M36 32m-7 0a7 7 0 1 1 7 7 4 4 0 1 1 0-7" stroke="#d45d7e" stroke-width="2.2" fill="none"/><path d="M12 44h26c4 0 6-2 6-4" stroke="#ffd166" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M14 40l-3-8M18 40l0-8" stroke="#ffd166" stroke-width="2" stroke-linecap="round"/><circle cx="11" cy="31" r="1.8" fill="#ffd166"/><circle cx="18" cy="31" r="1.8" fill="#ffd166"/>`,
+    BOAT: `<rect width="64" height="64" fill="#2f78c4"/><circle cx="50" cy="14" r="6" fill="#ffe28a"/><path d="M10 36h44l-8 12H18z" fill="#fff"/><path d="M32 10 32 36 14 36z" fill="#f4f7fb"/><path d="M32 16 46 36H32z" fill="#dce6f2"/><path d="M0 50q8-5 16 0t16 0 16 0 16 0v14H0z" fill="#5aa0e6"/><path d="M0 56q8-5 16 0t16 0 16 0 16 0v8H0z" fill="#8cc2f5"/>`
+  };
+  const artURI = t => ART[t] ? 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${ART[t]}</svg>`) : null;
+  // image if the coin has one, otherwise its first two letters
+  const avatarInner = c => c.img ? `<img src="${esc(c.img)}" alt="">` : esc(c.ticker.slice(0, 2));
+
   /* ---------- feed ---------- */
   const palette = ['#3346ff', '#ff4a6b', '#12a36b', '#f08a00', '#8a3cff', '#0098c7', '#d4386e', '#4c5578'];
   const now = Date.now();
@@ -429,8 +445,8 @@
     ['Paper Boat', 'BOAT', 'Folded on a Tuesday. Still floating.', 4, 160, 58]
   ];
   let coins = seed.map(([name, ticker, line, reels, fees, minsAgo], i) => ({
-    name, ticker, line, reels, fees, color: palette[i % palette.length], img: null,
-    last: now - minsAgo * 60000, fund: (fees * SHARE.reels) % REEL_COST, mine: false, zecAddr: null, tipsOff: false
+    name, ticker, line, reels, fees, color: palette[i % palette.length],
+    last: now - minsAgo * 60000, fund: (fees * SHARE.reels) % REEL_COST, mine: false, zecAddr: null, tipsOff: false, img: artURI(ticker)
   }));
   coins.forEach(seedTips);
   function seedHist(c) {
@@ -470,7 +486,7 @@
       el.addEventListener('animationend', e => { if (e.animationName === 'cardIn') el.classList.remove('enter'); });
       el.innerHTML = `
         <div class="coin-top" role="button" tabindex="0" aria-label="Watch $${esc(c.ticker)} reels">
-          <div class="avatar" style="background:${c.color}">${c.img ? `<img src="${esc(c.img)}" alt="">` : esc(c.ticker.slice(0, 2))}<span class="play"><svg class="ic"><use href="#ic-play"/></svg></span></div>
+          <div class="avatar" style="background:${c.color}">${avatarInner(c)}<span class="play"><svg class="ic"><use href="#ic-play"/></svg></span></div>
           <div class="coin-id">
             <h3>${esc(c.name)}${c.mine ? '<span class="badge-new">YOURS</span>' : ''}</h3>
             <p class="mono">$${esc(c.ticker)}</p>
@@ -611,7 +627,7 @@
       if (!jobs.length) { list.innerHTML = '<li class="queue-empty">Nothing rendering. The next reel starts when a coin fills its jar.</li>'; return; }
       jobs.forEach(j => {
         const li = document.createElement('li');
-        li.innerHTML = `<span class="qa" style="background:${j.c.color}">${esc(j.c.ticker.slice(0, 2))}</span>
+        li.innerHTML = `<span class="qa" style="background:${j.c.color}">${avatarInner(j.c)}</span>
           <div class="qt"><b>$${esc(j.c.ticker)}</b> <small>reel ${j.n} · ${esc(formats[j.n % formats.length].n.toLowerCase())} · host ${esc(hostFor(j.c.ticker + j.n).name)}</small><div class="qbar"><span></span></div></div>
           <span class="qs"></span>`;
         j.el = li; list.append(li); tick1(j);
@@ -649,7 +665,7 @@
     const side = chipSide++ % 2 ? 'right' : 'left';
     el.className = 'fchip ' + side;
     el.style.top = (18 + Math.random() * 55) + '%';
-    el.innerHTML = `<i style="background:${c.color}">${esc(c.ticker.slice(0, 2))}</i><span>${html}</span>`;
+    el.innerHTML = `<i style="background:${c.color}">${avatarInner(c)}</i><span>${html}</span>`;
     chipsBox.append(el);
     while (chipsBox.children.length > 4) chipsBox.firstChild.remove();
     setTimeout(() => el.remove(), 4300);
@@ -1068,7 +1084,7 @@
       $('#dashFees').textContent = usd(coin.fees);
       $('#dashNext').textContent = formats[(coin.reels + 1) % formats.length].n;
       $('#payAvail').textContent = usd(Math.max(0, earned() - withdrawn), 2);
-      $('.cs-av').textContent = coin.ticker.slice(0, 2);
+      $('.cs-av').innerHTML = avatarInner(coin);
       $('.cs-av').style.background = coin.color;
       $('.cs-name').textContent = coin.name;
       $('.app-h').textContent = `Good to see you, ${coin.name} team`;
