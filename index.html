@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hypereel</title>
+<meta name="description" content="Launch a coin. Its trading fees pay for AI reels that promote it. The busiest coins get the most reels.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!--BODY-START-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ic-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="ic-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="ic-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar" id="bar">
+  <a class="brand" href="#top" aria-label="Hypereel home">
+    <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="word">hypereel</span>
+  </a>
+  <nav class="nav" aria-label="Sections">
+    <a href="#how">How it works</a>
+    <a href="#formats">Formats</a>
+    <a href="#feed">Feed</a>
+  </nav>
+  <div class="bar-actions">
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle colour theme">
+      <svg class="ic"><use href="#ic-moon"/></svg>
+    </button>
+    <button class="btn btn-solid btn-sm" type="button" data-open-launch>Launch a coin</button>
+  </div>
+</header>
+
+<main id="main">
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="dot live"></span> <span id="liveCount">1,284</span> reels rendered this week</p>
+    <h1 class="display">
+      <span class="line">Launch a coin.</span>
+      <span class="line">Let the reels <span class="rot" aria-live="polite"><span id="rotWord">sell</span></span> it.</span>
+    </h1>
+    <p class="lede">Your coin's trading fees pay for short AI videos about it. Every <b class="mono">$25</b> in fees commissions a new reel with a new host, and it goes straight to the feed. The more people trade, the more reels get made.</p>
+
+    <form class="quick" id="quickForm" novalidate>
+      <label class="sr" for="quickTicker">Ticker</label>
+      <div class="quick-field">
+        <span class="mono">$</span>
+        <input id="quickTicker" name="ticker" maxlength="8" autocomplete="off" spellcheck="false" placeholder="TICKER">
+      </div>
+      <button class="btn btn-solid" type="submit">Launch <svg class="ic"><use href="#ic-arrow"/></svg></button>
+    </form>
+    <p class="quick-err" id="quickErr" role="alert" hidden></p>
+
+    <div class="split" aria-label="Fee split per trade">
+      <div class="split-bar">
+        <span class="seg s-you" style="--w:30%"></span>
+        <span class="seg s-reels" style="--w:50%"></span>
+        <span class="seg s-house" style="--w:20%"></span>
+      </div>
+      <ul class="split-key">
+        <li><i class="k-you"></i><b class="mono">0.30%</b> to you, in ETH</li>
+        <li><i class="k-reels"></i><b class="mono">0.50%</b> pays for reels</li>
+        <li><i class="k-house"></i><b class="mono">0.20%</b> to Hypereel</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hero-phone" aria-label="Example reel">
+    <div class="phone" id="phone">
+      <canvas id="reelCanvas" width="360" height="640" aria-hidden="true"></canvas>
+      <div class="reel-top">
+        <span class="chip mono">$MOSSY · reel 1</span>
+        <span class="chip mono ghost">funded by $25</span>
+      </div>
+      <p class="caption" id="caption"></p>
+      <div class="reel-bottom">
+        <div class="progress"><span id="reelProg"></span></div>
+        <div class="reel-row">
+          <div>
+            <p class="reel-name">Mossy</p>
+            <p class="reel-sub mono">host: Juniper · format: talking head</p>
+          </div>
+          <button class="btn btn-buy" type="button" id="buyMossy">Buy $MOSSY</button>
+        </div>
+      </div>
+    </div>
+    <div class="floaty f1 mono">+ $4.10 fee</div>
+    <div class="floaty f2 mono">reel #2 queued</div>
+  </div>
+</section>
+
+<!-- TICKER TAPE -->
+<div class="tape" aria-hidden="true"><div class="tape-track" id="tape"></div></div>
+
+<!-- HOW -->
+<section class="section" id="how">
+  <header class="sec-head">
+    <p class="eyebrow">How it works</p>
+    <h2 class="h2">From launch to feed in three steps</h2>
+  </header>
+  <ol class="steps">
+    <li class="step reveal">
+      <span class="step-n mono">1</span>
+      <h3>Launch in about a minute</h3>
+      <p>Pick a name, a ticker, one line of pitch and one image. Your coin goes live with its own card in the feed.</p>
+    </li>
+    <li class="step reveal">
+      <span class="step-n mono">2</span>
+      <h3>Trading funds the reels</h3>
+      <p>Each trade pays a 1% fee into your coin's vault. When the reel share reaches $25, a new reel starts rendering. It takes about eight minutes.</p>
+    </li>
+    <li class="step reveal">
+      <span class="step-n mono">3</span>
+      <h3>The feed follows the fees</h3>
+      <p>The newest reel plays first, full screen, with a buy button under it. Coins that keep trading keep getting reels. Coins that stop drop out of view.</p>
+    </li>
+  </ol>
+</section>
+
+<!-- CALCULATOR + PIT -->
+<section class="section split-sec" id="fees">
+  <div class="calc reveal">
+    <p class="eyebrow">Fee calculator</p>
+    <h2 class="h2">What a day of trading pays for</h2>
+    <label class="calc-label" for="vol">Daily trading volume <output class="mono" id="volOut">$50,000</output></label>
+    <input type="range" id="vol" min="1000" max="1000000" step="1000" value="50000">
+    <dl class="calc-grid">
+      <div><dt>Total fees</dt><dd class="mono" id="cFees">$500</dd></div>
+      <div><dt>Your cut</dt><dd class="mono" id="cYou">$150</dd></div>
+      <div><dt>Reels funded</dt><dd class="mono" id="cReels">10</dd></div>
+      <div><dt>Hypereel</dt><dd class="mono" id="cHouse">$100</dd></div>
+    </dl>
+    <p class="fine">Figures come from the 1% fee: 30% to you, 50% to reels, 20% to Hypereel. One reel costs $25.</p>
+  </div>
+
+  <div class="pit reveal">
+    <div class="pit-head">
+      <div>
+        <p class="eyebrow">The reel jar</p>
+        <p class="pit-meter mono"><span id="jarAmt">$0.00</span> / $25.00</p>
+      </div>
+      <div class="pit-btns">
+        <button class="btn btn-line btn-sm" type="button" id="trade1">Trade $500</button>
+        <button class="btn btn-solid btn-sm" type="button" id="trade5">Trade $5k</button>
+      </div>
+    </div>
+    <div class="jar" id="jar">
+      <canvas id="pitCanvas" aria-label="Coins dropping into the reel jar"></canvas>
+      <div class="jar-fill" id="jarFill"></div>
+      <p class="jar-hint" id="jarHint">Tap a trade button. Half of each 1% fee drops into the jar.</p>
+    </div>
+    <p class="pit-foot mono">Reels funded: <b id="jarReels">0</b></p>
+  </div>
+</section>
+
+<!-- FORMATS -->
+<section class="section" id="formats">
+  <header class="sec-head row">
+    <div>
+      <p class="eyebrow">Formats</p>
+      <h2 class="h2">Eight reel formats, picked in rotation</h2>
+      <p class="sub">A coin never gets the same format twice in a row, so ten reels look like ten different people found it.</p>
+    </div>
+    <button class="btn btn-line" type="button" id="spinBtn">Pick the next format</button>
+  </header>
+  <div class="formats" id="formatList" role="list"></div>
+  <p class="fine wide">Reels are made from fixed formats using only the coin's name, ticker, pitch line and image. No free-text prompts, no real people and no third-party brands. The hosts are AI. Launchers own their reels and can post them anywhere.</p>
+</section>
+
+<!-- FEED -->
+<section class="section" id="feed">
+  <header class="sec-head row">
+    <div>
+      <p class="eyebrow"><span class="dot live"></span> Live feed</p>
+      <h2 class="h2">Coins getting reels right now</h2>
+    </div>
+    <div class="feed-tools">
+      <div class="search">
+        <svg class="ic"><use href="#ic-search"/></svg>
+        <label class="sr" for="feedSearch">Search coins</label>
+        <input id="feedSearch" type="search" placeholder="Search name or ticker" autocomplete="off">
+      </div>
+      <div class="tabs" role="tablist" aria-label="Sort feed">
+        <button role="tab" aria-selected="true" data-sort="recent">Newest reel</button>
+        <button role="tab" aria-selected="false" data-sort="reels">Most reels</button>
+        <button role="tab" aria-selected="false" data-sort="fees">Most fees</button>
+      </div>
+    </div>
+  </header>
+  <p class="fine sample-note">Example coins with simulated trading, for demonstration.</p>
+  <div class="feed" id="feedGrid" aria-live="polite"></div>
+  <p class="empty" id="feedEmpty" hidden>No coins match that search. Try a shorter name or ticker.</p>
+</section>
+
+<section class="cta">
+  <h2 class="display sm">Your coin's first reel is $25 of trading away.</h2>
+  <button class="btn btn-solid btn-lg" type="button" data-open-launch>Launch a coin <svg class="ic"><use href="#ic-arrow"/></svg></button>
+</section>
+</main>
+
+<footer class="foot">
+  <a class="brand" href="#top"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span class="word">hypereel</span></a>
+  <p>Hypereel, 2026. The hosts in the reels are AI. This is a demo; no real tokens are created.</p>
+  <nav class="foot-nav" aria-label="Footer"><a href="#how">How it works</a><a href="#formats">Formats</a><a href="#feed">Feed</a><a href="#license" id="licenseLink">License</a></nav>
+</footer>
+
+<!-- LAUNCH DIALOG -->
+<div class="modal" id="launch" role="dialog" aria-modal="true" aria-labelledby="launchTitle" hidden>
+  <div class="modal-bg" data-close></div>
+  <div class="modal-card">
+    <button class="icon-btn modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#ic-close"/></svg></button>
+    <div class="launch-body" id="launchForm">
+      <h2 id="launchTitle" class="h3">Launch a coin</h2>
+      <form id="lf" novalidate>
+        <div class="lf-grid">
+          <div class="fld">
+            <label for="lfName">Name</label>
+            <input id="lfName" maxlength="24" placeholder="Mossy" autocomplete="off">
+          </div>
+          <div class="fld">
+            <label for="lfTicker">Ticker</label>
+            <div class="pre"><span class="mono">$</span><input id="lfTicker" maxlength="8" placeholder="MOSSY" autocomplete="off" spellcheck="false"></div>
+          </div>
+          <div class="fld full">
+            <label for="lfLine">Pitch line <span class="count mono" id="lfCount">0/80</span></label>
+            <input id="lfLine" maxlength="80" placeholder="A small green coin for people who like being outside." autocomplete="off">
+          </div>
+          <div class="fld full">
+            <label for="lfImg">Image</label>
+            <label class="drop" for="lfImg" id="lfDrop">
+              <img id="lfPrev" alt="" hidden>
+              <span id="lfDropTxt"><svg class="ic"><use href="#ic-upload"/></svg> Choose or drop a PNG, JPG or WebP under 2 MB</span>
+            </label>
+            <input id="lfImg" type="file" accept="image/png,image/jpeg,image/webp" class="sr">
+          </div>
+        </div>
+        <p class="lf-err" id="lfErr" role="alert" hidden></p>
+        <button class="btn btn-solid btn-block" type="submit">Launch coin</button>
+        <p class="fine">You earn 0.30% of every trade. This demo adds your coin to the feed on this device only.</p>
+      </form>
+    </div>
+    <div class="launch-done" id="launchDone" hidden>
+      <h2 class="h3">$<span id="doneTicker">COIN</span> is live</h2>
+      <p>Your coin is at the top of the feed. Its first reel starts rendering once it earns $25 in reel fees.</p>
+      <button class="btn btn-solid btn-block" type="button" id="doneGo">See it in the feed</button>
+    </div>
+  </div>
+</div>
+
+<!-- LICENSE DIALOG -->
+<div class="modal" id="license" role="dialog" aria-modal="true" aria-labelledby="licTitle" hidden>
+  <div class="modal-bg" data-close></div>
+  <div class="modal-card">
+    <button class="icon-btn modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#ic-close"/></svg></button>
+    <h2 id="licTitle" class="h3">MIT License</h2>
+    <pre class="lic mono">Copyright (c) 2026 Hypereel
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script src="main.js"></script>
+<!--BODY-END-->
+</body>
+</html>
