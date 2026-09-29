@@ -55,7 +55,7 @@
   onScroll();
 
   /* ---------- rotating word ---------- */
-  const words = ['sell', 'pitch', 'hype', 'shill'];
+  const words = ['pitch', 'hype', 'sell', 'film'];
   const rotWrap = $('.rot');
   let wi = 0;
   if (!reduced) setInterval(() => {
@@ -64,7 +64,7 @@
     setTimeout(() => {
       wi = (wi + 1) % words.length;
       const n = document.createElement('span');
-      n.id = 'rotWord'; n.className = 'in'; n.textContent = words[wi];
+      n.id = 'rotWord'; n.className = 'holo-text in'; n.textContent = words[wi];
       cur.replaceWith(n);
     }, 330);
   }, 2600);
@@ -79,11 +79,6 @@
       if (el.getBoundingClientRect().top > innerHeight) { el.classList.add('below'); io.observe(el); }
     });
   }
-
-  /* ---------- live counter ---------- */
-  const liveCount = $('#liveCount');
-  let live = 1284;
-  setInterval(() => { live += Math.random() < .5 ? 1 : 0; liveCount.textContent = live.toLocaleString('en-US'); }, 3000);
 
   /* ---------- hero reel (canvas, original host character) ---------- */
   const reel = (() => {
