@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { formatEther, isAddress } from 'viem';
+import { formatEther, parseEther, isAddress } from 'viem';
 import { config } from './config.js';
 import { q, one } from './db.js';
 import { client, abi } from './chain.js';
@@ -139,6 +139,34 @@ export default async function routes(app) {
     return { ok: true, verified: false };
   });
 
+  // ---- on-chain reads for the site (quotes, balances, claimable fees)
+  const lp = (functionName, args) => client.readContract({ address: config.launchpad, abi: abi.launchpad, functionName, args });
+  app.get('/api/quote', async req => {
+    if (!config.launchpad) throw bad('The launchpad is not configured.');
+    const coin = addrParam(String(req.query.coin || ''));
+    const side = req.query.side === 'sell' ? 'sell' : 'buy';
+    let amount;
+    try { amount = parseEther(String(req.query.amount || '0')); } catch { throw bad('Amount is not a number.'); }
+    if (amount <= 0n) throw bad('Enter an amount above zero.');
+    try {
+      if (side === 'buy') { const [tokens, fee] = await lp('quoteBuy', [coin, amount]); return { side, tokens: tokens.toString(), fee: fee.toString() }; }
+      const [eth, fee] = await lp('quoteSell', [coin, amount]); return { side, eth: eth.toString(), fee: fee.toString() };
+    } catch (e) {
+      const m = /CoinGraduated/.test(e.message) ? 'This coin sold out its curve and graduated.' : /BadInput/.test(e.message) ? 'That is more than the curve can take.' : 'Could not get a quote from the chain.';
+      throw bad(m);
+    }
+  });
+  app.get('/api/balance', async req => {
+    const coin = addrParam(String(req.query.coin || '')), who = addrParam(String(req.query.address || ''));
+    const bal = await client.readContract({ address: coin, abi: abi.token, functionName: 'balanceOf', args: [who] });
+    return { tokens: bal.toString() };
+  });
+  app.get('/api/claimable/:address', async req => {
+    if (!config.launchpad) return { eth: '0' };
+    const v = await lp('creatorFees', [addrParam(req.params.address)]);
+    return { eth: formatEther(v), wei: v.toString() };
+  });
+
   // ---- wallet sign-in
   app.get('/api/auth/nonce', async (req) => {
     const address = String(req.query.address || '');
@@ -171,7 +199,11 @@ export default async function routes(app) {
     if (coin.creator !== a) throw Object.assign(new Error('Only the wallet that launched this coin can change it.'), { statusCode: 403 });
     const b = req.body || {};
     if ('zecAddr' in b) await q('UPDATE coins SET zec_addr = $2, tips_off = CASE WHEN $2::text IS NULL THEN true ELSE tips_off END WHERE address = $1', [req.params.address.toLowerCase(), checkZec(b.zecAddr)]);
-    if ('tipsOff' in b) await q('UPDATE coins SET tips_off = $2 WHERE address = $1', [req.params.address.toLowerCase(), !!b.tipsOff]);
+    if ('tipsOff' in b) {
+      const cur = await one('SELECT zec_addr FROM coins WHERE address = $1', [req.params.address.toLowerCase()]);
+      if (!b.tipsOff && !cur.zec_addr) throw bad('Add a Zcash address to this coin before turning tips on.');
+      await q('UPDATE coins SET tips_off = $2 WHERE address = $1', [req.params.address.toLowerCase(), !!b.tipsOff]);
+    }
     return coinJson(await one(`${COIN_SELECT} WHERE c.address = $1`, [req.params.address.toLowerCase()]));
   });
 

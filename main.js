@@ -70,6 +70,16 @@
   const usd = (n, d = 0) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // Live mode turns on when the Hyperpad server answers /api/config (see the end of this file).
+  const live = { on: false, cfg: null, stats: null };
+  async function api(path, opts = {}) {
+    const r = await fetch(path, { method: opts.method || 'GET', credentials: 'same-origin',
+      headers: opts.body ? { 'content-type': 'application/json' } : {}, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(b.error || `Request failed (${r.status})`);
+    return b;
+  }
+
   /* ---------- toast ---------- */
   const toastEl = $('#toast');
   let toastT;
@@ -213,6 +223,7 @@
   } else heroReel.play();
 
   $('#buyMossy').addEventListener('click', () => {
+    if (live.on) { if (coins[0]) tradeUI.open(coins[0]); else $('#feed').scrollIntoView({ behavior: 'smooth' }); return; }
     const c = coins.find(c => c.ticker === 'MOSSY');
     if (c) trade(c, 1000);
     toast('Demo trade: $1,000 of $MOSSY. No real money moved.');
@@ -470,6 +481,7 @@
   let query = '';
   const grid = $('#feedGrid'), emptyEl = $('#feedEmpty');
   const cards = new Map();
+  const keyOf = c => c.address || c.ticker;
 
   function ago(ts) {
     const m = Math.max(0, Math.round((Date.now() - ts) / 60000));
@@ -479,7 +491,7 @@
     return h < 24 ? h + 'h ago' : Math.floor(h / 24) + 'd ago';
   }
   function cardFor(c) {
-    let el = cards.get(c.ticker);
+    let el = cards.get(keyOf(c));
     if (!el) {
       el = document.createElement('article');
       el.className = 'coin enter';
@@ -507,6 +519,7 @@
           <button class="btn btn-zec btn-sm" type="button" data-act="tip"><svg class="ic"><use href="#ic-zec"/></svg>Tip ZEC</button>
         </div>`;
       el.querySelector('[data-act="buy"]').addEventListener('click', e => {
+        if (live.on) return tradeUI.open(c);
         burst(e.currentTarget);
         trade(c, 1000);
         toast(`Demo trade: $1,000 of $${c.ticker}. No real money moved.`);
@@ -515,21 +528,23 @@
       const top = el.querySelector('.coin-top');
       top.addEventListener('click', () => player.openCoin(c));
       top.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); player.openCoin(c); } });
-      cards.set(c.ticker, el);
+      cards.set(keyOf(c), el);
     }
     el.querySelector('[data-k="reels"]').textContent = c.reels;
     el.querySelector('[data-k="fees"]').textContent = usd(c.fees);
     el.querySelector('[data-k="last"]').textContent = c.reels ? ago(c.last) : 'none yet';
     el.querySelector('[data-k="fund"]').textContent = `${usd(c.fund, 2)} / ${usd(REEL_COST)}`;
     el.querySelector('.meter span').style.width = (c.fund / REEL_COST * 100) + '%';
-    el.querySelector('[data-k="tips"]').textContent = `${zecFmt(tipTotal(c)) || '0'} ZEC tipped · ${c.tips.length} tip${c.tips.length === 1 ? '' : 's'}`;
+    const tz = c.tipsZecTotal ?? tipTotal(c), tn = c.tipsCountTotal ?? c.tips.length;
+    el.querySelector('[data-k="tips"]').textContent = `${zecFmt(tz) || '0'} ZEC tipped · ${tn} tip${tn === 1 ? '' : 's'}`;
     const h = c.hist, mn = Math.min(...h), mx = Math.max(...h), rng = mx - mn || 1;
     const line = h.map((v, i) => `${i ? 'L' : 'M'}${(i / (h.length - 1) * 100).toFixed(1)} ${(27 - (v - mn) / rng * 24).toFixed(1)}`).join(' ');
     el.querySelector('.spark .l').setAttribute('d', line);
     el.querySelector('.spark .a').setAttribute('d', line + ' L100 30 L0 30 Z');
     const tb = el.querySelector('[data-act="tip"]');
-    tb.disabled = !!c.tipsOff;
-    tb.title = c.tipsOff ? 'This coin is not taking tips right now' : '';
+    const noTips = !!c.tipsOff || (live.on && !c.zecAddr);
+    tb.disabled = noTips;
+    tb.title = noTips ? 'This coin is not taking ZEC tips right now' : '';
     return el;
   }
   function sorted() {
@@ -544,13 +559,14 @@
   }
   function render() {
     const list = sorted();
-    const keep = new Set(list.map(c => c.ticker));
+    const keep = new Set(list.map(keyOf));
     for (const [t, el] of cards) if (!keep.has(t) && el.parentNode) el.remove();
     list.forEach((c, i) => {
       const el = cardFor(c);
       if (grid.children[i] !== el) grid.insertBefore(el, grid.children[i] || null);
     });
     emptyEl.hidden = list.length > 0;
+    emptyEl.textContent = live.on && !coins.length ? 'No coins yet. Launch the first one from the button at the top.' : 'No coins match that search. Try a shorter name or ticker.';
   }
   $$('.tabs button').forEach(b => {
     b.setAttribute('aria-selected', String(b.dataset.sort === sortKey));
@@ -580,12 +596,20 @@
     while (c.fund >= REEL_COST) { c.fund -= REEL_COST; c.reels++; made++; queue.add(c, c.reels); }
     if (made) {
       c.last = Date.now();
-      const el = cards.get(c.ticker);
+      const el = cards.get(keyOf(c));
       if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
     }
     return made;
   }
   function addTip(c, zec, pool, memo) {
+    if (live.on) {
+      api('/api/tips', { method: 'POST', body: { coin: c.address, zec, pool } }).then(() => refreshStats()).catch(e => toast(e.message));
+      const t = { t: Date.now(), zec, pool, memo: '', coin: c, fresh: true, reported: true };
+      c.tips.unshift(t); allTips.push(t);
+      c.tipsZecTotal = (c.tipsZecTotal || 0) + zec; c.tipsCountTotal = (c.tipsCountTotal || 0) + 1;
+      render(); drawZecBoard();
+      return 0;
+    }
     const t = { t: Date.now(), zec, pool, memo, coin: c, fresh: true };
     c.tips.unshift(t); allTips.push(t);
     const made = fundJar(c, zec * ZEC_USD); // 100% of a tip goes to the reel jar
@@ -633,7 +657,23 @@
         j.el = li; list.append(li); tick1(j);
       });
     }
+    function syncLive(list) {
+      jobs.length = 0;
+      list.filter(r => r.status !== 'posted' || Date.now() - Date.parse(r.updatedAt) < 60000).slice(0, 5).forEach(r => {
+        const c = coins.find(x => x.address === r.coin);
+        if (c) jobs.push({ c, n: r.n, live: true, status: r.status, done: r.status === 'posted', doneAt: Date.parse(r.updatedAt), el: null });
+      });
+      draw();
+    }
     function tick1(j) {
+      if (j.live) {
+        const label = { queued: 'Queued', rendering: 'Rendering', posted: 'Posted', failed: 'Failed' }[j.status] || j.status;
+        j.el.querySelector('.qbar span').style.width = j.status === 'posted' ? '100%' : j.status === 'queued' ? '4%' : '35%';
+        j.el.querySelector('.qs').textContent = label;
+        j.el.classList.toggle('done', j.status === 'posted');
+        j.el.classList.toggle('indet', j.status === 'rendering');
+        return;
+      }
       const f = Math.min(1, (Date.now() - j.start) / RENDER_MS);
       j.el.querySelector('.qbar span').style.width = (f * 100) + '%';
       j.el.querySelector('.qs').textContent = f >= 1 ? 'Posted' : Math.round(f * 100) + '%';
@@ -652,7 +692,7 @@
       if (jobs.length !== before) draw();
     }, 250);
     draw();
-    return { add };
+    return { add, syncLive };
   })();
 
 
@@ -673,6 +713,7 @@
   const statEls = $$('[data-stat]');
   const statNow = {};
   function statValues() {
+    if (live.on && live.stats) return { coins: live.stats.coins, reels: live.stats.reels, paid: live.stats.paidUsd, zec: live.stats.zec };
     return {
       coins: coins.length,
       reels: coins.reduce((a, c) => a + c.reels, 0),
@@ -715,7 +756,7 @@
   let dash = null, tipper = null, player = null;
   // simulated market
   setInterval(() => {
-    if (document.hidden) return;
+    if (document.hidden || live.on) return;
     const c = coins[Math.floor(Math.random() * coins.length)];
     if (Math.random() < .12 && !c.tipsOff) {
       const shielded = Math.random() < .8;
@@ -790,7 +831,7 @@
     zecList.innerHTML = recent.map(t => `
       <li class="${t.fresh ? 'new' : ''}">
         <span class="zbadge ${t.pool === 'shielded' ? '' : 't'}"><svg class="ic"><use href="#ic-${t.pool === 'shielded' ? 'shield' : 'zec'}"/></svg></span>
-        <span class="who"><b>$${esc(t.coin.ticker)}</b> · ${t.pool === 'shielded' ? 'sender hidden' : 'transparent sender'}<small>${t.memo ? '“' + esc(t.memo) + '”' : (t.pool === 'shielded' ? 'no memo' : 'memos need a shielded tip')} · ${ago(t.t)}</small></span>
+        <span class="who"><b>$${esc(t.coin.ticker)}</b> · ${t.pool === 'shielded' ? 'sender hidden' : 'transparent sender'}<small>${t.reported ? (t.verified ? 'verified' : 'reported, not verified yet') : t.memo ? '“' + esc(t.memo) + '”' : (t.pool === 'shielded' ? 'no memo' : 'memos need a shielded tip')} · ${ago(t.t)}</small></span>
         <span class="amt-v">${zecFmt(t.zec)} ZEC</span>
       </li>`).join('');
     allTips.forEach(t => { t.fresh = false; });
@@ -899,7 +940,9 @@
       burst(e.currentTarget, 'zec');
       const made = addTip(coin, a.n, pool, pool === 'shielded' ? memo.value.trim() : '');
       closeModal(m);
-      toast(`Demo tip recorded: ${zecFmt(a.n)} ZEC (${usd(a.n * ZEC_USD, 2)}) went to $${coin.ticker}'s reel jar${made ? `. Reel ${coin.reels} is rendering.` : '.'}`);
+      toast(live.on
+        ? `Tip reported: ${zecFmt(a.n)} ZEC to $${coin.ticker}. It shows as unverified until it is confirmed on the Zcash chain.`
+        : `Demo tip recorded: ${zecFmt(a.n)} ZEC (${usd(a.n * ZEC_USD, 2)}) went to $${coin.ticker}'s reel jar${made ? `. Reel ${coin.reels} is rendering.` : '.'}`);
     });
     return {
       open(c) {
@@ -924,8 +967,14 @@
     const m = $('#player'), stage = $('#plStage');
     let list = [], i = 0;
     const r = makeReel($('#plCanvas'), $('#plCap'), $('#plProg'), { loop: false, duration: 9000, onEnd: () => go(1, true) });
+    const video = $('#plVideo');
     function load(dir) {
       const c = list[i], n = Math.max(1, c.reels);
+      video.hidden = true; video.removeAttribute('src'); stage.classList.remove('has-video');
+      if (live.on && c.address) api(`/api/coins/${c.address}/reels`).then(rs => {
+        const v = rs.find(x => x.status === 'posted' && x.videoUrl);
+        if (v && list[i] === c && !m.hidden) { video.src = v.videoUrl; video.hidden = false; stage.classList.add('has-video'); video.play().catch(() => {}); }
+      }).catch(() => {});
       const look = r.set(c, n);
       $('#plChip').textContent = `$${c.ticker} · reel ${n}`;
       $('#plFmt').textContent = formats[n % formats.length].n.toLowerCase();
@@ -949,10 +998,10 @@
       openModal(m);
       load(0);
     }
-    m.addEventListener('modalclose', () => r.pause());
+    m.addEventListener('modalclose', () => { r.pause(); video.pause(); });
     $('#plNext').addEventListener('click', () => go(1));
     $('#plPrev').addEventListener('click', () => go(-1));
-    $('#plBuy').addEventListener('click', e => { const c = list[i]; trade(c, 1000); burst(e.currentTarget); toast(`Demo trade: $1,000 of $${c.ticker}. No real money moved.`); $('#plSub').textContent = `host: ${hostFor(c.ticker + Math.max(1, c.reels)).name} · ${usd(c.fees)} in fees`; });
+    $('#plBuy').addEventListener('click', e => { const c = list[i]; if (live.on) { r.pause(); return tradeUI.open(c); } trade(c, 1000); burst(e.currentTarget); toast(`Demo trade: $1,000 of $${c.ticker}. No real money moved.`); $('#plSub').textContent = `host: ${hostFor(c.ticker + Math.max(1, c.reels)).name} · ${usd(c.fees)} in fees`; });
     $('#plTip').addEventListener('click', () => { r.pause(); tipper.open(list[i]); });
     $('#tip').addEventListener('modalclose', () => { if (!m.hidden) r.play(); });
     m.addEventListener('keydown', e => {
@@ -1011,6 +1060,7 @@
     const views = $$('.view'), navBtns = $$('.app-nav button');
     const svg = $('#chartSvg'), tip = $('#chartTip'), chartBox = $('#chart');
     let coin = coins.find(c => c.ticker === 'MOSSY') || coins[0];
+    const stub = () => ({ name: 'Your coin', ticker: 'COIN', line: '', reels: 0, fees: 0, fund: 0, color: '#5b5bf0', img: null, tips: [], hist: [0, 0], last: Date.now(), tipsOff: true });
     let range = 7, pts = [], trades = [], payouts = [], withdrawn = 0;
 
     // seeded random so each coin/range draws the same curve every time
@@ -1018,6 +1068,12 @@
     const earned = () => coin.fees * SHARE.you;
 
     function buildPoints() {
+      if (live.on) {
+        const now = Date.now(), since = now - range * 86400000, h = coin.histPts || [];
+        const before = h.filter(p => p.t < since).pop();
+        pts = [{ t: since, v: before ? before.v : 0 }, ...h.filter(p => p.t >= since), { t: now, v: earned() }];
+        return;
+      }
       const n = { 1: 24, 7: 28, 30: 30, 90: 45 }[range];
       const r = rng(coin.ticker + range);
       const total = earned();
@@ -1083,7 +1139,7 @@
       $('#dashReels').textContent = coin.reels;
       $('#dashFees').textContent = usd(coin.fees);
       $('#dashNext').textContent = formats[(coin.reels + 1) % formats.length].n;
-      $('#payAvail').textContent = usd(Math.max(0, earned() - withdrawn), 2);
+      if (!live.on) $('#payAvail').textContent = usd(Math.max(0, earned() - withdrawn), 2);
       $('.cs-av').innerHTML = avatarInner(coin);
       $('.cs-av').style.background = coin.color;
       $('.cs-name').textContent = coin.name;
@@ -1105,7 +1161,7 @@
       trades.forEach(t => { t.fresh = false; });
     }
     function payRows() {
-      $('#tblPay').innerHTML = payouts.map(p => `<tr><td>${new Date(p.t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td><td class="mono">0x4f2c…a91c</td><td class="r">${usd(p.v, 2)}</td></tr>`).join('')
+      $('#tblPay').innerHTML = payouts.map(p => `<tr><td>${new Date(p.t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td><td class="mono">${esc($('#dashWallet').textContent)}</td><td class="r">${live.on ? Number(p.v).toFixed(5) + ' ETH' : usd(p.v, 2)}</td></tr>`).join('')
         || '<tr><td colspan="3">No withdrawals yet.</td></tr>';
     }
     function tipRows() {
@@ -1129,18 +1185,41 @@
     }
     navBtns.forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
 
+    async function loadLive() {
+      if (!coin.address) return;
+      const c = coin;
+      const [tr, hist] = await Promise.all([api(`/api/coins/${c.address}/trades`), api(`/api/coins/${c.address}/history`)]).catch(() => [[], []]);
+      if (coin !== c) return;
+      trades = tr.map(t => ({ t: Date.parse(t.ts), size: t.usd, side: t.isBuy ? 'buy' : 'sell' }));
+      c.histPts = hist.map(h => ({ t: Date.parse(h.ts), v: h.feesUsd * SHARE.you }));
+      buildPoints(); drawChart(); tradeRows();
+      const w = wallet.get();
+      if (w && w.chain === 'evm' && w.addr.toLowerCase() === c.creator) {
+        const cl = await api('/api/claimable/' + w.addr).catch(() => ({ eth: '0' }));
+        $('#payAvail').textContent = `${Number(cl.eth).toFixed(5)} ETH`;
+      } else $('#payAvail').textContent = 'Connect the creator wallet';
+    }
+    function pickLive() {
+      const w = wallet.get(), me = w && w.chain === 'evm' ? w.addr.toLowerCase() : null;
+      coin = (me && coins.find(c => c.creator === me)) || coins[0] || stub();
+      trades = []; payouts = [];
+      all(); loadLive();
+    }
     $('#coinSwitch').addEventListener('click', () => {
+      if (live.on && !coins.length) { toast('No coins yet.'); return; }
       const i = coins.indexOf(coin);
       coin = coins[(i + 1) % coins.length];
       trades = []; payouts = []; withdrawn = 0;
-      all();
+      all(); if (live.on) loadLive();
       toast(`Showing $${coin.ticker}`);
     });
     $('#appBoost').addEventListener('click', () => {
+      if (live.on) { if (coin.address) tradeUI.open(coin); else toast('Launch a coin first.'); return; }
       trade(coin, 2500);
       toast(`Demo trade: $2,500 of $${coin.ticker} added ${usd(2500 * FEE * SHARE.reels, 2)} to the reel jar.`);
     });
     $('#payBtn').addEventListener('click', () => {
+      if (live.on) return claimFees(coin, v => { payouts.unshift({ t: Date.now(), v }); payRows(); loadLive(); });
       const avail = Math.max(0, earned() - withdrawn);
       if (avail < 0.01) { toast('Nothing to withdraw yet.'); return; }
       withdrawn += avail;
@@ -1149,7 +1228,19 @@
       toast(`Demo withdrawal of ${usd(avail, 2)}. No money moved.`);
     });
     const settings = store.get('hr-settings', {});
-    $('#setTips').addEventListener('change', e => {
+    $('#setTips').addEventListener('change', async e => {
+      if (live.on) {
+        const want = !e.target.checked;
+        e.target.checked = !coin.tipsOff;
+        if (!coin.address) return;
+        try {
+          await ensureSession();
+          const upd = await api('/api/coins/' + coin.address, { method: 'PATCH', body: { tipsOff: want } });
+          coin.tipsOff = upd.tipsOff; e.target.checked = !upd.tipsOff; render();
+          toast(upd.tipsOff ? `ZEC tips are off for $${coin.ticker}` : `ZEC tips are on for $${coin.ticker}`);
+        } catch (err) { toast(err.message); }
+        return;
+      }
       coin.tipsOff = !e.target.checked;
       if (coin.mine) saveMine();
       render();
@@ -1164,6 +1255,9 @@
 
     all();
     return {
+      pickLive,
+      liveUpdate(c) { if (c === coin) { stats(); loadLive(); } },
+      current: () => coin,
       onTip(c, made) {
         if (c !== coin) return;
         c.tips[0].freshDash = true;
@@ -1272,6 +1366,7 @@
     }
     const short = a => a.length > 12 ? a.slice(0, 5) + '…' + a.slice(-4) : a;
     let state = null, bound = null;
+    const changeFns = [];
 
     function setState(next, silent) {
       state = next;
@@ -1292,6 +1387,7 @@
         store.set('hp-wallet', null);
       }
       drawOn();
+      changeFns.forEach(fn => { try { fn(state); } catch (e) { console.error(e); } });
     }
     function drawOn() {
       $('#walletPick').hidden = !!state; $('#walletOn').hidden = !state;
@@ -1394,7 +1490,12 @@
     $('#wCopy').addEventListener('click', () => state && copyText(state.addr, 'Address'));
     $('#wDisconnect').addEventListener('click', disconnect);
     restore();
-    return { get: () => state };
+    return {
+      get: () => state,
+      provider: () => { if (!state) return null; const w = allWallets().find(x => x.id === state.id); return w ? providerFor(w) : null; },
+      open,
+      onChange: fn => changeFns.push(fn)
+    };
   })();
 
 
@@ -1424,8 +1525,13 @@
 
   /* ---------- login ---------- */
   const login = $('#login');
-  $$('[data-login]').forEach(b => b.addEventListener('click', () => {
+  $$('[data-login]').forEach(b => b.addEventListener('click', async () => {
     closeMenu();
+    if (live.on) {
+      try { const a = await ensureSession(); toast(`Signed in as ${a.slice(0, 6)}…${a.slice(-4)}`); }
+      catch (e) { toast(e.message); }
+      return;
+    }
     $('#loginForm').hidden = false; $('#loginDone').hidden = true; $('#loginErr').hidden = true;
     openModal(login);
   }));
@@ -1568,6 +1674,7 @@
     if (line.length < 8) return showErr('Write a pitch line of at least 8 characters. The reels are built from it.', lfLine);
     const zr = checkZec(lfZec.value);
     if (zr && zr.err) return showErr(zr.err, lfZec);
+    if (live.on) return liveLaunch({ name, ticker, line, zr });
     const coin = {
       name, ticker, line, reels: 0, fees: 0, fund: 0,
       color: pvColor,
@@ -1589,4 +1696,302 @@
     closeModal(launch);
     $('#feed').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
   });
+
+  /* =====================================================================
+     LIVE MODE: real coins on Robinhood Chain through the Hyperpad server
+     ===================================================================== */
+  const LP_ABI = [
+    'function createCoin(string name, string symbol, string metadataURI, uint256 minTokensOut) payable returns (address)',
+    'function buy(address token, uint256 minTokensOut, uint256 deadline) payable returns (uint256)',
+    'function sell(address token, uint256 tokenAmount, uint256 minEthOut, uint256 deadline) returns (uint256)',
+    'function claimCreatorFees() returns (uint256)',
+    'event CoinCreated(address indexed token, address indexed creator, string name, string symbol, string metadataURI)'
+  ];
+  const ERC20_ABI = ['function approve(address spender, uint256 amount) returns (bool)', 'function allowance(address owner, address spender) view returns (uint256)'];
+  const shortAddr = a => a ? a.slice(0, 6) + '…' + a.slice(-4) : '';
+  function colorFor(addr) { let x = 0; for (const ch of addr) x = (x * 31 + ch.charCodeAt(0)) >>> 0; return palette[x % palette.length]; }
+  function txLink(hash) { return live.cfg.chain.explorer ? `${live.cfg.chain.explorer}/tx/${hash}` : null; }
+  function friendlyError(e) {
+    const code = e && (e.code || e.info?.error?.code);
+    if (code === 4001 || code === 'ACTION_REJECTED' || /user rejected|denied/i.test(e?.message || '')) return 'You cancelled the request in your wallet.';
+    if (/insufficient funds/i.test(e?.message || '')) return 'Not enough ETH in this wallet to cover the amount and gas.';
+    if (/Slippage/.test(e?.message || e?.data || '')) return 'The price moved more than 2% before your trade landed. Try again.';
+    if (/CoinGraduated/.test(e?.message || '')) return 'This coin sold out its curve and graduated.';
+    return e?.shortMessage || e?.reason || e?.message || 'Something went wrong.';
+  }
+  function evmWallet() {
+    const w = wallet.get();
+    if (!w) throw new Error('Connect a wallet first.');
+    if (w.chain !== 'evm') throw new Error('Robinhood Chain needs an Ethereum wallet such as MetaMask, Coinbase Wallet or Rabby.');
+    return w;
+  }
+  async function ensureChain(prov) {
+    const hex = '0x' + live.cfg.chain.id.toString(16);
+    const cur = String(await prov.request({ method: 'eth_chainId' })).toLowerCase();
+    if (cur === hex) return;
+    try {
+      await prov.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hex }] });
+    } catch (e) {
+      if (e.code !== 4902 && !/unrecognized|not been added|unknown chain/i.test(e.message || '')) throw e;
+      await prov.request({ method: 'wallet_addEthereumChain', params: [{
+        chainId: hex, chainName: live.cfg.chain.name, nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        rpcUrls: [live.cfg.chain.rpc], blockExplorerUrls: live.cfg.chain.explorer ? [live.cfg.chain.explorer] : []
+      }] });
+    }
+  }
+  async function signer() {
+    if (!window.ethers) throw new Error('The wallet library did not load. Reload the page and try again.');
+    const w = evmWallet(), prov = wallet.provider();
+    if (!prov) throw new Error('Your wallet is not available in this browser.');
+    await ensureChain(prov);
+    const s = await new window.ethers.BrowserProvider(prov).getSigner();
+    if ((await s.getAddress()).toLowerCase() !== w.addr.toLowerCase()) throw new Error('Your wallet switched accounts. Reconnect and try again.');
+    return s;
+  }
+  async function ensureSession() {
+    const w = evmWallet();
+    const me = await api('/api/me');
+    if (me.address && me.address === w.addr.toLowerCase()) return me.address;
+    const { message } = await api('/api/auth/nonce?address=' + w.addr);
+    toast('Sign the message in your wallet to log in. It costs nothing.');
+    // personal_sign takes the message as hex-encoded UTF-8 (EIP-1193 / MetaMask convention)
+    const hex = '0x' + Array.from(new TextEncoder().encode(message), b => b.toString(16).padStart(2, '0')).join('');
+    const signature = await wallet.provider().request({ method: 'personal_sign', params: [hex, w.addr] });
+    return (await api('/api/auth/verify', { method: 'POST', body: { address: w.addr, message, signature } })).address;
+  }
+
+  function mapCoin(a, prev) {
+    const o = prev || {};
+    const w = wallet.get();
+    return Object.assign(o, {
+      address: a.address, creator: a.creator, name: a.name, ticker: a.symbol, line: a.line || '',
+      reels: a.reels, fees: a.feesUsd, fund: a.reelFundUsd, color: o.color || colorFor(a.address), img: a.image,
+      last: Date.parse(a.lastReelAt || a.createdAt), created: Date.parse(a.createdAt),
+      mine: !!(w && w.chain === 'evm' && w.addr.toLowerCase() === a.creator),
+      zecAddr: a.zecAddr, tipsOff: a.tipsOff, tips: o.tips || [], tipsZecTotal: a.tipsZec, tipsCountTotal: a.tipsCount,
+      hist: o.hist && o.hist.length > 1 ? o.hist : [0, a.feesUsd], priceEth: a.priceEth, graduated: a.graduated, volumeEth: a.volumeEth
+    });
+  }
+  async function refreshCoin(addr) {
+    const a = await api('/api/coins/' + addr);
+    let c = coins.find(x => x.address === addr);
+    if (c) { mapCoin(a, c); c.hist.push(a.feesUsd); if (c.hist.length > 30) c.hist.shift(); }
+    else { c = mapCoin(a); coins.unshift(c); }
+    render();
+    return c;
+  }
+  async function refreshStats() { live.stats = await api('/api/stats').catch(() => live.stats); drawStats(true); }
+
+  /* ---------- buy / sell dialog ---------- */
+  const tradeUI = (() => {
+    const m = $('#trade'), amt = $('#trAmt'), err = $('#trErr'), go = $('#trGo');
+    let coin = null, side = 'buy', quote = null, bal = 0n, qTimer = 0, busy = false;
+    const fmtTok = v => Number(window.ethers ? window.ethers.formatEther(v) : 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    function setSide(sd) {
+      side = sd;
+      $$('.trade-tabs button', m).forEach(b => b.setAttribute('aria-selected', String(b.dataset.side === sd)));
+      $('#trAmtLabel').textContent = sd === 'buy' ? 'Amount in ETH' : `Amount in $${coin.ticker}`;
+      go.textContent = sd === 'buy' ? `Buy $${coin.ticker}` : `Sell $${coin.ticker}`;
+      const q = $('#trQuick');
+      q.innerHTML = sd === 'buy'
+        ? ['0.01', '0.05', '0.1', '0.5'].map(v => `<button type="button" data-v="${v}">${v}</button>`).join('')
+        : [25, 50, 100].map(p => `<button type="button" data-p="${p}">${p}%</button>`).join('');
+      amt.value = sd === 'buy' ? '0.01' : '';
+      loadBalance(); requestQuote();
+    }
+    async function loadBalance() {
+      bal = 0n; $('#trBal').textContent = '';
+      const w = wallet.get();
+      if (!w || w.chain !== 'evm' || side !== 'sell') return;
+      const r = await api(`/api/balance?coin=${coin.address}&address=${w.addr}`).catch(() => null);
+      if (r) { bal = BigInt(r.tokens); $('#trBal').textContent = `Balance: ${fmtTok(bal)}`; }
+    }
+    function requestQuote() { clearTimeout(qTimer); qTimer = setTimeout(getQuote, 250); }
+    async function getQuote() {
+      quote = null; err.hidden = true;
+      ['#trOut', '#trFee', '#trReel'].forEach(k => { $(k).textContent = '…'; });
+      const v = amt.value.trim().replace(',', '.');
+      if (!/^\d*\.?\d+$/.test(v) || Number(v) <= 0) { ['#trOut', '#trFee', '#trReel'].forEach(k => { $(k).textContent = '–'; }); go.disabled = true; return; }
+      try {
+        const q = await api(`/api/quote?coin=${coin.address}&side=${side}&amount=${encodeURIComponent(v)}`);
+        if (amt.value.trim().replace(',', '.') !== v) return; // user typed again
+        quote = { ...q, amount: v };
+        const E = window.ethers;
+        if (side === 'buy') { $('#trOut').textContent = `${fmtTok(q.tokens)} $${coin.ticker}`; }
+        else { $('#trOut').textContent = `${Number(E.formatEther(q.eth)).toFixed(6)} ETH`; }
+        $('#trFee').textContent = `${Number(E.formatEther(q.fee)).toFixed(6)} ETH`;
+        $('#trReel').textContent = `${Number(E.formatEther(q.fee) * 0.5).toFixed(6)} ETH`;
+        go.disabled = false;
+      } catch (e) { err.textContent = e.message; err.hidden = false; go.disabled = true; ['#trOut', '#trFee', '#trReel'].forEach(k => { $(k).textContent = '–'; }); }
+    }
+    $$('.trade-tabs button', m).forEach(b => b.addEventListener('click', () => setSide(b.dataset.side)));
+    $('#trQuick').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.v) amt.value = b.dataset.v;
+      else if (window.ethers) amt.value = window.ethers.formatEther(bal * BigInt(b.dataset.p) / 100n);
+      requestQuote();
+    });
+    amt.addEventListener('input', requestQuote);
+    go.addEventListener('click', async () => {
+      if (busy || !quote) return;
+      err.hidden = true;
+      try {
+        busy = true; go.disabled = true;
+        const E = window.ethers;
+        go.textContent = 'Confirm in your wallet…';
+        const s = await signer();
+        const lp = new E.Contract(live.cfg.launchpad, LP_ABI, s);
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+        let tx;
+        if (side === 'buy') {
+          tx = await lp.buy(coin.address, BigInt(quote.tokens) * 98n / 100n, deadline, { value: E.parseEther(quote.amount) });
+        } else {
+          const amount = E.parseEther(quote.amount);
+          const tok = new E.Contract(coin.address, ERC20_ABI, s);
+          if ((await tok.allowance(await s.getAddress(), live.cfg.launchpad)) < amount) {
+            go.textContent = 'Approve in your wallet…';
+            await (await tok.approve(live.cfg.launchpad, amount)).wait();
+            go.textContent = 'Confirm the sale in your wallet…';
+          }
+          tx = await lp.sell(coin.address, amount, BigInt(quote.eth) * 98n / 100n, deadline);
+        }
+        go.textContent = 'Waiting for Robinhood Chain…';
+        await tx.wait();
+        closeModal(m);
+        burst($('#walletBtn'));
+        const link = txLink(tx.hash);
+        toast(side === 'buy' ? `Bought $${coin.ticker}.` : `Sold $${coin.ticker}.`, link ? { label: 'View', fn: () => window.open(link, '_blank', 'noopener') } : undefined);
+        refreshCoin(coin.address).catch(() => {});
+      } catch (e) {
+        err.textContent = friendlyError(e); err.hidden = false;
+      } finally {
+        busy = false; go.disabled = false; go.textContent = side === 'buy' ? `Buy $${coin.ticker}` : `Sell $${coin.ticker}`;
+      }
+    });
+    return {
+      open(c) {
+        if (c.graduated) { toast(`$${c.ticker} sold out its curve and graduated.`); return; }
+        coin = c;
+        $('#tradeTitle').textContent = `Trade $${c.ticker}`;
+        const av = $('#trAv'); av.style.background = c.color; av.innerHTML = avatarInner(c);
+        $('#trPrice').textContent = c.priceEth ? `Price: ${(c.priceEth).toExponential(3)} ETH per token` : '';
+        err.hidden = true;
+        openModal(m);
+        setSide('buy');
+        if (!wallet.get()) $('#trNote').textContent = 'Connect an Ethereum wallet to trade. Trades run on Robinhood Chain from your own wallet.';
+        else $('#trNote').textContent = 'Trades run on Robinhood Chain from your own wallet. Crypto is risky and you can lose what you put in.';
+      }
+    };
+  })();
+
+  async function claimFees(coin, done) {
+    try {
+      const w = evmWallet();
+      const cl = await api('/api/claimable/' + w.addr);
+      if (BigInt(cl.wei || '0') === 0n) { toast('No creator fees to claim for this wallet yet.'); return; }
+      toast('Confirm the claim in your wallet.');
+      const s = await signer();
+      const tx = await new window.ethers.Contract(live.cfg.launchpad, LP_ABI, s).claimCreatorFees();
+      await tx.wait();
+      const link = txLink(tx.hash);
+      toast(`Claimed ${Number(cl.eth).toFixed(5)} ETH to your wallet.`, link ? { label: 'View', fn: () => window.open(link, '_blank', 'noopener') } : undefined);
+      done && done(cl.eth);
+    } catch (e) { toast(friendlyError(e)); if (/Connect|Ethereum wallet/.test(e.message)) wallet.open(); }
+  }
+
+  async function liveLaunch({ name, ticker, line, zr }) {
+    const btn = $('#lfSubmit'), label = btn.textContent;
+    try {
+      evmWallet();
+    } catch (e) { showErr(e.message); wallet.open(); return; }
+    btn.disabled = true;
+    try {
+      btn.textContent = 'Saving your coin profile…';
+      const meta = await api('/api/meta', { method: 'POST', body: { name, symbol: ticker, line, image: imgData, zecAddr: zr ? zr.addr : null } });
+      btn.textContent = 'Confirm the launch in your wallet…';
+      const s = await signer();
+      const lp = new window.ethers.Contract(live.cfg.launchpad, LP_ABI, s);
+      const tx = await lp.createCoin(meta.name, meta.symbol, meta.metadataURI, 0n);
+      btn.textContent = 'Waiting for Robinhood Chain…';
+      const rc = await tx.wait();
+      const ev = rc.logs.map(l => { try { return lp.interface.parseLog(l); } catch { return null; } }).find(e => e && e.name === 'CoinCreated');
+      const token = ev ? ev.args.token.toLowerCase() : null;
+      btn.textContent = 'Adding it to the feed…';
+      let c = null;
+      for (let i = 0; token && i < 30 && !c; i++) { try { c = await refreshCoin(token); } catch { await new Promise(r => setTimeout(r, 1000)); } }
+      query = ''; $('#feedSearch').value = ''; sortKey = 'recent';
+      $$('.tabs button').forEach(x => x.setAttribute('aria-selected', String(x.dataset.sort === 'recent')));
+      render();
+      $('#doneTicker').textContent = ticker;
+      $('#launchDone p').textContent = c
+        ? 'Your coin is live on Robinhood Chain and at the top of the feed. Its first reel starts once it earns $25 in reel fees.'
+        : 'Your launch is confirmed on Robinhood Chain. It will appear in the feed within a minute.';
+      $('#launchForm').hidden = true; $('#launchDone').hidden = false;
+      burst($('#doneTicker'));
+      if (c) dash.pickLive();
+    } catch (e) {
+      showErr(friendlyError(e));
+    } finally { btn.disabled = false; btn.textContent = label; }
+  }
+
+  /* ---------- switch to live mode when the server is there ---------- */
+  (async () => {
+    let cfg = null;
+    try { const r = await fetch('/api/config', { signal: AbortSignal.timeout(4000) }); if (r.ok && /json/.test(r.headers.get('content-type') || '')) cfg = await r.json(); } catch { cfg = null; }
+    const bar = $('#modeBar'), txt = $('#modeText');
+    if (!cfg || !cfg.launchpad) {
+      bar.hidden = false; bar.classList.add('demo');
+      txt.textContent = 'Demo mode: example coins and simulated trading. Nothing here touches a real chain.';
+      return;
+    }
+    live.on = true; live.cfg = cfg;
+    bar.hidden = false;
+    txt.textContent = cfg.chain.id === 46630 ? `Live on ${cfg.chain.name}. This is a test network: use test ETH only.` : `Live on ${cfg.chain.name}.`;
+    $('.sample-note').textContent = `Coins launched on ${cfg.chain.name}. Prices and fees update as trades land.`;
+    $('#watchFeed').closest('.queue').querySelector('.queue-note').textContent = 'Every $25 of a coin\'s reel fees queues a new reel.';
+    // drop the example data
+    coins = []; allTips.length = 0;
+    for (const el of cards.values()) el.remove();
+    cards.clear();
+    try {
+      const [list, tips, reelsList] = await Promise.all([api('/api/coins?sort=recent'), api('/api/tips'), api('/api/reels')]);
+      coins = list.map(a => mapCoin(a));
+      await Promise.all(coins.slice(0, 12).map(async c => {
+        const h = await api(`/api/coins/${c.address}/history`).catch(() => []);
+        if (h.length) c.hist = [0, ...h.map(x => x.feesUsd)];
+      }));
+      tips.forEach(t => { const c = coins.find(x => x.address === t.coin); if (c) allTips.push({ t: Date.parse(t.createdAt), zec: Number(t.zec), pool: t.pool, memo: '', coin: c, reported: true, verified: t.verified }); });
+      render(); drawZecBoard(); queue.syncLive(reelsList); dash.pickLive(); refreshStats();
+      tapeItems.length = 0;
+      coins.slice(0, 8).forEach(c => { if (c.fees > 0) tapeItems.push({ t: c.ticker, v: c.fees / FEE }); });
+      drawTape();
+    } catch (e) { toast('Could not load coins: ' + e.message); }
+    wallet.onChange(() => { coins.forEach(c => { const w = wallet.get(); c.mine = !!(w && w.chain === 'evm' && w.addr.toLowerCase() === c.creator); }); render(); dash.pickLive(); });
+    setInterval(refreshStats, 20000);
+
+    // live updates from the server
+    if ('EventSource' in window) {
+      const es = new EventSource('/api/stream');
+      es.addEventListener('trade', async ev => {
+        const d = JSON.parse(ev.data);
+        const c = await refreshCoin(d.coin).catch(() => null);
+        if (!c) return;
+        tapeItems.unshift({ t: c.ticker, v: d.usd }); tapeItems.length = Math.min(tapeItems.length, 10);
+        if (d.usd >= 50) liveChip(c, `<b>$${esc(c.ticker)}</b> ${d.isBuy ? 'buy' : 'sell'} ${usd(d.usd)} · +${usd(d.feeUsd * 0.5, 2)} to reels`);
+        dash.liveUpdate(c); refreshStats();
+      });
+      es.addEventListener('coin', ev => { refreshCoin(JSON.parse(ev.data).address).catch(() => {}); refreshStats(); });
+      es.addEventListener('graduated', ev => { refreshCoin(JSON.parse(ev.data).coin).catch(() => {}); });
+      es.addEventListener('reel', async ev => {
+        const r = JSON.parse(ev.data);
+        queue.syncLive(await api('/api/reels').catch(() => []));
+        const c = coins.find(x => x.address === r.coin);
+        if (c && r.status === 'posted') {
+          toast(`New reel posted: $${c.ticker} reel ${r.n}`, { label: 'Watch', fn: () => player.openCoin(c) });
+          liveChip(c, `<b>Reel ${r.n}</b> posted for $${esc(c.ticker)}`);
+        }
+      });
+    }
+  })();
+
 })();

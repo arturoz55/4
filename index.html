@@ -93,6 +93,8 @@
   </nav>
 </header>
 
+<div class="mode-bar" id="modeBar" role="status" hidden><span class="dot live"></span><span id="modeText"></span></div>
+
 <main id="main">
 <!-- HERO -->
 <section class="hero" id="top">
@@ -304,7 +306,7 @@
   <div class="pit reveal">
     <div class="pit-head">
       <div>
-        <p class="eyebrow">The reel jar</p>
+        <p class="eyebrow">The reel jar <span class="sim-tag">Simulation</span></p>
         <p class="pit-meter mono"><span id="jarAmt">$0.00</span> / $25.00</p>
       </div>
       <div class="pit-btns">
@@ -569,6 +571,7 @@ SOFTWARE.</pre>
     <button class="icon-btn modal-x light" type="button" data-close aria-label="Close player"><svg class="ic"><use href="#ic-close"/></svg></button>
     <div class="pl-stage" id="plStage">
       <canvas id="plCanvas" width="360" height="640" aria-hidden="true"></canvas>
+      <video id="plVideo" playsinline loop muted hidden></video>
       <div class="reel-top"><span class="chip mono" id="plChip">$MOSSY · reel 14</span><span class="chip mono ghost" id="plFmt">talking head</span></div>
       <p class="caption" id="plCap"></p>
       <div class="pl-like" id="plLike" aria-hidden="true"></div>
@@ -599,7 +602,7 @@ SOFTWARE.</pre>
     <button class="icon-btn modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#ic-close"/></svg></button>
     <div id="walletPick">
       <h2 id="walletTitle" class="h3">Connect a wallet</h2>
-      <p class="sub wallet-sub">Hyperpad only reads your public address. It never asks you to sign or send anything from this page.</p>
+      <p class="sub wallet-sub">Connecting only shares your public address. Trades, launches and sign-in each ask your wallet for approval first, and nothing moves without it. Robinhood Chain needs an Ethereum wallet.</p>
       <p class="lbl">Solana</p>
       <div class="wlist" id="wlSol"></div>
       <p class="lbl">Ethereum and EVM</p>
@@ -620,6 +623,36 @@ SOFTWARE.</pre>
       <p class="fine">Your address is now shown as the payout wallet in the dashboard.</p>
       <button class="btn btn-line btn-block" type="button" id="wDisconnect">Disconnect</button>
     </div>
+  </div>
+</div>
+
+<!-- TRADE DIALOG (live mode) -->
+<div class="modal" id="trade" role="dialog" aria-modal="true" aria-labelledby="tradeTitle" hidden>
+  <div class="modal-bg" data-close></div>
+  <div class="modal-card narrow">
+    <button class="icon-btn modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#ic-close"/></svg></button>
+    <div class="trade-head">
+      <span class="avatar sm" id="trAv"></span>
+      <div><h2 id="tradeTitle" class="h3">Trade $COIN</h2><p class="fine mono" id="trPrice"></p></div>
+    </div>
+    <div class="seg2 trade-tabs" role="tablist" aria-label="Side">
+      <button type="button" role="tab" aria-selected="true" data-side="buy">Buy</button>
+      <button type="button" role="tab" aria-selected="false" data-side="sell">Sell</button>
+    </div>
+    <div class="fld">
+      <label for="trAmt"><span id="trAmtLabel">Amount in ETH</span> <span class="count mono" id="trBal"></span></label>
+      <input id="trAmt" class="mono" inputmode="decimal" autocomplete="off" value="0.01">
+    </div>
+    <div class="amt" id="trQuick"></div>
+    <dl class="kv trade-kv">
+      <div><dt>You receive (estimate)</dt><dd class="mono" id="trOut">–</dd></div>
+      <div><dt>Fee (1%)</dt><dd class="mono" id="trFee">–</dd></div>
+      <div><dt>Goes to this coin's reels</dt><dd class="mono" id="trReel">–</dd></div>
+      <div><dt>Max slippage</dt><dd class="mono">2%</dd></div>
+    </dl>
+    <p class="lf-err" id="trErr" role="alert" hidden></p>
+    <button class="btn btn-primary btn-block" type="button" id="trGo">Buy</button>
+    <p class="fine" id="trNote">Trades run on Robinhood Chain from your own wallet. Crypto is risky and you can lose what you put in.</p>
   </div>
 </div>
 
@@ -684,6 +717,7 @@ SOFTWARE.</pre>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script src="main.js"></script>
 <!--BODY-END-->
 </body>

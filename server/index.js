@@ -30,7 +30,7 @@ await app.register(routes);
 
 // ---- the site: only these files are public. Asset URLs carry a content hash so every deploy busts caches.
 const ROOT = new URL('../', import.meta.url);
-const FILES = { 'style.css': 'text/css; charset=utf-8', 'main.js': 'text/javascript; charset=utf-8', 'live.js': 'text/javascript; charset=utf-8' };
+const FILES = { 'style.css': 'text/css; charset=utf-8', 'main.js': 'text/javascript; charset=utf-8' };
 const assets = {};
 for (const [f, type] of Object.entries(FILES)) {
   const body = fs.readFileSync(new URL(f, ROOT));
