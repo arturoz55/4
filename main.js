@@ -6,10 +6,64 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* ---------- splash screen ---------- */
+  const splash = document.getElementById('splash');
+  const splashDone = new Promise(resolve => {
+    if (!splash) return resolve();
+    document.body.classList.add('splashing');
+    const bar = document.getElementById('splashBar'), tag = document.getElementById('splashTag');
+    const tags = ['Loading the feed…', 'Waking up the hosts…', 'Filling the reel jars…', 'Ready'];
+    const t0 = performance.now(), MIN = matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 1600, MAX = 4000;
+    let loaded = document.readyState === 'complete', closed = false, ti = 0;
+    const tick = setInterval(() => {
+      const el = performance.now() - t0;
+      const f = loaded ? Math.min(1, el / MIN) : Math.min(.85, el / MAX);
+      bar.style.width = (f * 100) + '%';
+      const want = Math.min(tags.length - 1, Math.floor(f * (tags.length - 1) + .15));
+      if (want !== ti) { ti = want; tag.textContent = tags[ti]; }
+      if ((loaded && el >= MIN) || el >= MAX) close();
+    }, 80);
+    function close() {
+      if (closed) return;
+      closed = true; clearInterval(tick);
+      bar.style.width = '100%';
+      splash.classList.add('out');
+      document.body.classList.remove('splashing');
+      setTimeout(() => { splash.remove(); resolve(); }, 650);
+    }
+    addEventListener('load', () => { loaded = true; });
+    splash.addEventListener('click', close);
+    addEventListener('keydown', close, { once: true });
+  });
+
+  /* ---------- storage, gated by cookie consent ---------- */
+  // Keys that only persist when the visitor allows "Preferences".
+  const PREF_KEYS = new Set(['hr-coins', 'hr-sort', 'hr-settings', 'hp-wallet']);
+  const pending = new Map();
+  let consent = null;
+  try { consent = JSON.parse(localStorage.getItem('hp-consent')); } catch { consent = null; }
+  const prefsAllowed = () => !!(consent && consent.preferences);
   const store = {
-    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+    get(k, d) {
+      if (pending.has(k)) return pending.get(k);
+      try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; }
+    },
+    set(k, v) {
+      if (PREF_KEYS.has(k) && !prefsAllowed()) { pending.set(k, v); return false; }
+      try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; }
+    }
   };
+  function applyConsent(c) {
+    consent = { necessary: true, preferences: !!c.preferences, analytics: !!c.analytics, marketing: !!c.marketing, date: new Date().toISOString() };
+    try { localStorage.setItem('hp-consent', JSON.stringify(consent)); } catch { /* storage blocked */ }
+    try { document.cookie = `hp_consent=${consent.preferences ? 'p' : ''}${consent.analytics ? 'a' : ''}${consent.marketing ? 'm' : ''}n; max-age=31536000; path=/; SameSite=Lax`; } catch { /* cookies blocked */ }
+    if (consent.preferences) {
+      pending.forEach((v, k) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } });
+    } else {
+      PREF_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch { /* ignore */ } });
+    }
+    pending.clear();
+  }
   const REEL_COST = 25;       // dollars of reel fees per reel
   const FEE = 0.01;           // 1% of each trade
   const SHARE = { you: 0.3, reels: 0.5, house: 0.2 };
@@ -1325,6 +1379,31 @@
     $('#wDisconnect').addEventListener('click', disconnect);
     restore();
     return { get: () => state };
+  })();
+
+
+  /* ---------- cookie banner + settings ---------- */
+  (() => {
+    const bar = $('#cookieBar'), m = $('#cookies');
+    const ck = { pref: $('#ckPref'), stats: $('#ckStats'), mkt: $('#ckMkt') };
+    function fill() {
+      ck.pref.checked = consent ? consent.preferences : true;
+      ck.stats.checked = consent ? consent.analytics : false;
+      ck.mkt.checked = consent ? consent.marketing : false;
+      $('#ckStatus').textContent = consent ? `Last saved ${new Date(consent.date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}.` : 'You have not chosen yet.';
+    }
+    function done(c, msg) {
+      applyConsent(c);
+      bar.hidden = true;
+      if (!m.hidden) closeModal(m);
+      toast(msg);
+    }
+    $('#cookieAccept').addEventListener('click', () => done({ preferences: true, analytics: true, marketing: true }, 'Cookie choice saved: all allowed'));
+    $('#cookieReject').addEventListener('click', () => done({}, 'Cookie choice saved: necessary only'));
+    $('#ckReject').addEventListener('click', () => done({}, 'Cookie choice saved: necessary only'));
+    $('#ckSave').addEventListener('click', () => done({ preferences: ck.pref.checked, analytics: ck.stats.checked, marketing: ck.mkt.checked }, 'Cookie choices saved'));
+    $$('[data-cookies]').forEach(b => b.addEventListener('click', () => { closeMenu(); fill(); openModal(m); }));
+    if (!consent) splashDone.then(() => setTimeout(() => { if (!consent) bar.hidden = false; }, 500));
   })();
 
   /* ---------- login ---------- */

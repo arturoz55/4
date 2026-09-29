@@ -6,6 +6,9 @@ Plain HTML, CSS and JavaScript with no build step. [Matter.js](https://brm.io/ma
 
 ## What works
 
+- Splash screen with the animated logo and a load bar; it closes when the page has loaded, or on any click or key.
+- Cookie consent: a banner with Accept all, Necessary only and Customize (Preferences, Analytics, Marketing). Preference data (launched coins, feed sort, dashboard settings, connected wallet) is only written to the browser after consent, and is cleared if the visitor opts out. Reopen it from Cookie settings in the footer.
+
 - A full-screen reel player: every coin gets its own AI host and a script built from its name, ticker and pitch line. Arrow keys, swipe or scroll move between coins, double-tap likes, and Buy and Tip ZEC work inside the player.
 - A live render queue: every $25 funds a reel that renders (sped up to 12 seconds) and posts with a Watch shortcut.
 - Fee sparklines on every coin card, coin bursts on trades and tips, and a live card preview in the launch form.

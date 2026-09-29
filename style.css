@@ -609,6 +609,37 @@ textarea[aria-invalid="true"], .fld input[aria-invalid="true"] { border-color: v
 .wconn b { font-weight: 500; }
 #walletOn .btn-block { margin-top: 14px; }
 
+
+/* ---------- splash screen ---------- */
+.splash { position: fixed; inset: 0; z-index: 200; background: #000; color: #fff; display: grid; place-items: center; cursor: pointer; transition: opacity .6s var(--ease), visibility .6s; }
+.splash::before { content: ""; position: absolute; inset: 0; background: radial-gradient(50% 40% at 50% 100%, rgba(122, 92, 255, .45), transparent 70%), radial-gradient(30% 30% at 15% 90%, rgba(223, 166, 243, .25), transparent 70%); }
+.splash.out { opacity: 0; visibility: hidden; pointer-events: none; }
+.splash.out .splash-in { transform: scale(1.06); }
+.splash-in { position: relative; display: grid; justify-items: center; gap: 18px; transition: transform .6s var(--ease); }
+.splash-logo { width: 120px; height: 97px; fill: #fff; overflow: visible; }
+.splash-logo .sa { animation: spA 1s .1s var(--ease) both; }
+.splash-logo .sb { animation: spB 1s .25s var(--ease) both; }
+@keyframes spA { from { transform: translateX(-140px); opacity: 0; } }
+@keyframes spB { from { transform: translateX(140px); opacity: 0; } }
+.splash-word { margin: 6px 0 0; font: 600 18px var(--body); letter-spacing: .42em; padding-left: .42em; animation: fadeUp .8s .7s var(--ease) both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } }
+.splash-bar { width: 180px; height: 2px; background: rgba(255,255,255,.15); border-radius: 2px; overflow: hidden; animation: fadeUp .6s .9s var(--ease) both; }
+.splash-bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8b8bff, #dfa6f3); transition: width .3s linear; }
+.splash-tag { margin: 0; font: 500 12px var(--mono); color: #a9a6d0; letter-spacing: .06em; animation: fadeUp .6s 1s var(--ease) both; min-height: 1.4em; }
+.splash-skip { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; text-align: center; margin: 0; font-size: 12px; color: #6f6c95; }
+body.splashing { overflow: hidden; }
+
+/* ---------- cookie banner ---------- */
+.cookie { position: fixed; z-index: 45; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: 980px; margin: 0 auto; display: flex; align-items: center; gap: 20px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(14px); border-radius: 18px; padding: 16px 18px; box-shadow: 0 0 0 1px var(--line), var(--shadow-lg); animation: up .5s var(--ease) both; }
+.cookie-txt { flex: 1; min-width: 0; }
+.cookie-txt p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.cookie-txt .cookie-h { color: var(--ink); font-weight: 600; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.cookie-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.cookie-modal-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.sw input:disabled + i { opacity: .55; }
+.sw:has(input:disabled) { cursor: default; }
+@media (max-width: 760px) { .cookie { flex-direction: column; align-items: stretch; gap: 12px; } .cookie-acts { justify-content: stretch; } .cookie-acts .btn { flex: 1; } }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1500px) { .fchip.left { right: auto; left: 214px; top: auto !important; bottom: 18px; } .fchip.right { display: none; } }
 @media (max-width: 1080px) {

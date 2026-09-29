@@ -36,6 +36,15 @@
   <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
 </svg>
 
+<div class="splash" id="splash" role="status" aria-label="Loading Hyperpad">
+  <div class="splash-in">
+    <svg class="splash-logo" viewBox="0 0 136 110" aria-hidden="true"><path class="sa" d="M0 27H80C93 27 97 0 110 0H136V27H95C82 27 78 54 65 54H0Z"/><path class="sb" d="M0 82H45C58 82 62 55 74 55H136V82H60C47 82 43 109 30 109H0Z"/></svg>
+    <p class="splash-word">HYPERPAD</p>
+    <div class="splash-bar"><span id="splashBar"></span></div>
+    <p class="splash-tag" id="splashTag">Loading the feed…</p>
+  </div>
+  <p class="splash-skip">Click or press any key to skip</p>
+</div>
 <a class="skip" href="#main">Skip to content</a>
 <div class="progress-top" id="scrollProg" aria-hidden="true"></div>
 
@@ -416,7 +425,7 @@
     <nav class="foot-col" aria-label="Product"><p>Product</p><a href="#app">Dashboard</a><a href="#reel">AI reels</a><a href="#formats">Formats</a><a href="#feed">Feed</a></nav>
     <nav class="foot-col" aria-label="Money"><p>Money</p><a href="#fees">Fee calculator</a><a href="#zcash">ZEC tips</a><a href="#faq">FAQ</a></nav>
     <nav class="foot-col" aria-label="Community"><p>Community</p><a href="https://x.com/UseHyperpad" target="_blank" rel="noopener noreferrer">X · @UseHyperpad ↗</a><button type="button" class="linkish" data-wallet>Connect wallet</button></nav>
-    <nav class="foot-col" aria-label="Legal"><p>Legal</p><a href="#license" id="licenseLink">License</a><button type="button" class="linkish" id="toTop">Back to top ↑</button></nav>
+    <nav class="foot-col" aria-label="Legal"><p>Legal</p><a href="#license" id="licenseLink">License</a><button type="button" class="linkish" data-cookies>Cookie settings</button><button type="button" class="linkish" id="toTop">Back to top ↑</button></nav>
   </div>
   <p class="foot-legal">Hyperpad, 2026. The hosts in the reels are AI. This is a demo: no real tokens are created and no ZEC is moved. Zcash is a trademark of its respective owner; Hyperpad is not affiliated with it.</p>
 </footer>
@@ -634,6 +643,40 @@ SOFTWARE.</pre>
       <p class="sub">In the real product, a login link would go to <b id="loginTo"></b>. In this demo, the dashboard on the page is already yours to explore.</p>
       <button class="btn btn-primary btn-block" type="button" id="loginGo">Open the dashboard</button>
     </div>
+  </div>
+</div>
+
+<!-- COOKIE BANNER -->
+<section class="cookie" id="cookieBar" aria-label="Cookie notice" hidden>
+  <div class="cookie-txt">
+    <p class="cookie-h"><span class="cookie-ic" aria-hidden="true">🍪</span> Cookies and storage</p>
+    <p>Hyperpad stores a few things in your browser: your cookie choice, and, if you allow it, your launched coins, feed sort, dashboard settings and connected wallet. There are no ads or tracking scripts on this page.</p>
+  </div>
+  <div class="cookie-acts">
+    <button class="btn btn-soft btn-sm" type="button" data-cookies>Customize</button>
+    <button class="btn btn-soft btn-sm" type="button" id="cookieReject">Necessary only</button>
+    <button class="btn btn-primary btn-sm" type="button" id="cookieAccept">Accept all</button>
+  </div>
+</section>
+
+<!-- COOKIE SETTINGS -->
+<div class="modal" id="cookies" role="dialog" aria-modal="true" aria-labelledby="cookiesTitle" hidden>
+  <div class="modal-bg" data-close></div>
+  <div class="modal-card narrow">
+    <button class="icon-btn modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#ic-close"/></svg></button>
+    <h2 id="cookiesTitle" class="h3">Cookie settings</h2>
+    <p class="sub wallet-sub">Choose what Hyperpad may keep in this browser. You can change this any time from the footer.</p>
+    <div class="card set-list">
+      <label class="sw"><span><b>Necessary</b><small>Remembers your cookie choice. Always on.</small></span><input type="checkbox" checked disabled><i></i></label>
+      <label class="sw"><span><b>Preferences</b><small>Your launched coins, feed sort, dashboard settings and connected wallet.</small></span><input type="checkbox" id="ckPref"><i></i></label>
+      <label class="sw"><span><b>Analytics</b><small>Anonymous usage counts. This demo has no analytics, so nothing is collected either way.</small></span><input type="checkbox" id="ckStats"><i></i></label>
+      <label class="sw"><span><b>Marketing</b><small>Ad and campaign tracking. This demo has none, so nothing is collected either way.</small></span><input type="checkbox" id="ckMkt"><i></i></label>
+    </div>
+    <div class="cookie-modal-acts">
+      <button class="btn btn-soft" type="button" id="ckReject">Necessary only</button>
+      <button class="btn btn-primary" type="button" id="ckSave">Save choices</button>
+    </div>
+    <p class="fine" id="ckStatus"></p>
   </div>
 </div>
 
