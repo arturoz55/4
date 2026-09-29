@@ -1,0 +1,26 @@
+{
+  "name": "hyperpad",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Hyperpad: coin launchpad on Robinhood Chain where trading fees pay for AI reels.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "abi": "node server/scripts/export-abi.js",
+    "test": "node --test server/test/"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/static": "^8.3.0",
+    "fastify": "^5.12.5",
+    "pg": "^8.23.0",
+    "viem": "^2.57.0"
+  },
+  "optionalDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
+  }
+}
