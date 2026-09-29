@@ -1,0 +1,173 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c" width="1080" height="1080"></canvas>
+<script>
+// Hyperpad launch video. Every frame is a pure function of t (seconds), so frames can be exported one by one.
+const c = document.getElementById('c'), x = c.getContext('2d');
+const W = 1080, H = 1080, DUR = 16;
+const INK = '#1b1c2b', VIOLET = '#5b5bf0', CORAL = '#ef4f7a', HOUSE = '#a3a5b8', ZEC = '#e8a317';
+const SANS = 'Geist, Arial, sans-serif', MONO = '"Geist Mono", ui-monospace, monospace';
+const LOGO_A = new Path2D('M0 27H80C93 27 97 0 110 0H136V27H95C82 27 78 54 65 54H0Z');
+const LOGO_B = new Path2D('M0 82H45C58 82 62 55 74 55H136V82H60C47 82 43 109 30 109H0Z');
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const ease = v => 1 - Math.pow(1 - clamp(v), 3);
+const easeIO = v => { v = clamp(v); return v < .5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2; };
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+
+function logo(cx, cy, scale, color, ta, tb) {
+  x.save(); x.translate(cx - 68 * scale, cy - 55 * scale); x.scale(scale, scale); x.fillStyle = color;
+  x.save(); x.translate(ta, 0); x.fill(LOGO_A); x.restore();
+  x.save(); x.translate(tb, 0); x.fill(LOGO_B); x.restore();
+  x.restore();
+}
+function lavender(alpha = 1) {
+  x.globalAlpha = alpha;
+  x.fillStyle = '#fbfbfd'; x.fillRect(0, 0, W, H);
+  const blobs = [[540, 1180, 820, '#7a5cff', .9], [540, 1100, 1000, '#a98fff', .8], [60, 900, 600, '#dfa6f3', .8], [1020, 820, 600, '#cdb8ff', .8], [540, -60, 700, '#e9e0ff', 1]];
+  for (const [bx, by, r, col, a] of blobs) {
+    const g = x.createRadialGradient(bx, by, 0, bx, by, r);
+    g.addColorStop(0, col); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.globalAlpha = alpha * a; x.fillStyle = g; x.fillRect(0, 0, W, H);
+  }
+  // dot grid
+  x.globalAlpha = alpha * .18; x.fillStyle = VIOLET;
+  for (let i = 30; i < W; i += 34) for (let j = 30; j < H; j += 34) { x.beginPath(); x.arc(i, j, 1.6, 0, 7); x.fill(); }
+  x.globalAlpha = 1;
+}
+function text(str, px, py, size, weight, color, align = 'center', font = SANS, alpha = 1, spacing = 0) {
+  x.globalAlpha = alpha; x.fillStyle = color; x.font = `${weight} ${size}px ${font}`; x.textAlign = align; x.textBaseline = 'alphabetic';
+  if ('letterSpacing' in x) x.letterSpacing = spacing + 'px';
+  x.fillText(str, px, py);
+  if ('letterSpacing' in x) x.letterSpacing = '0px';
+  x.globalAlpha = 1;
+}
+function rr(px, py, w, h, r) { x.beginPath(); x.roundRect(px, py, w, h, r); }
+
+// original AI host (same character as the site)
+function host(px, py, s, tm, talking, look) {
+  x.save(); x.translate(px, py); x.scale(s, s);
+  const g = x.createLinearGradient(0, 0, 0, 640); g.addColorStop(0, look.wall[0]); g.addColorStop(1, look.wall[1]);
+  x.fillStyle = g; x.fillRect(0, 0, 360, 640);
+  for (let i = 0; i < 9; i++) { const bx = (i * 83 + tm * 6) % 420 - 30, by = 90 + (i * 57) % 260; x.fillStyle = `rgba(${i % 2 ? '255,110,160' : '160,150,255'},.14)`; x.beginPath(); x.arc(bx, by, 18 + (i % 3) * 10, 0, 7); x.fill(); }
+  const sx = Math.sin(tm * .9) * 4, sy = Math.cos(tm * 1.3) * 3;
+  x.save(); x.translate(180 + sx, sy);
+  x.fillStyle = look.shirt[0]; rr(-120, 430, 240, 260, 90); x.fill();
+  x.fillStyle = look.shirt[1]; rr(-40, 430, 80, 40, 20); x.fill();
+  x.fillStyle = look.skin; x.fillRect(-22, 380, 44, 60); x.beginPath(); x.ellipse(0, 320, 78, 92, 0, 0, 7); x.fill();
+  x.fillStyle = look.hair; x.beginPath(); x.ellipse(0, 262, 86, 52, 0, Math.PI, 0); x.fill();
+  x.beginPath(); x.ellipse(-60, 280, 26, 40, .3, 0, 7); x.fill(); x.beginPath(); x.ellipse(62, 276, 22, 34, -.4, 0, 7); x.fill();
+  const blink = (tm % 3.2) < .12 ? .1 : 1, lk = Math.sin(tm * .7) * 3;
+  x.fillStyle = '#1d1a2b';
+  x.beginPath(); x.ellipse(-28 + lk, 318, 7, 9 * blink, 0, 0, 7); x.fill();
+  x.beginPath(); x.ellipse(28 + lk, 318, 7, 9 * blink, 0, 0, 7); x.fill();
+  x.strokeStyle = '#1d1a2b'; x.lineWidth = 5; x.lineCap = 'round';
+  x.beginPath(); x.moveTo(-40, 298); x.lineTo(-16, 294); x.stroke(); x.beginPath(); x.moveTo(16, 294); x.lineTo(40, 298); x.stroke();
+  const open = talking ? 4 + Math.abs(Math.sin(tm * 14)) * 12 : 3;
+  x.fillStyle = '#5a1f2c'; x.beginPath(); x.ellipse(0, 362, 20, open, 0, 0, 7); x.fill();
+  x.restore();
+  // held-up coin with the Hyperpad mark
+  x.save(); x.translate(276 + sx, 480 + Math.sin(tm * 1.6) * 6 + sy); x.rotate(-.12 + Math.sin(tm) * .04);
+  x.fillStyle = look.skin; x.beginPath(); x.ellipse(-10, 40, 22, 18, 0, 0, 7); x.fill();
+  x.fillStyle = VIOLET; x.beginPath(); x.arc(0, 0, 50, 0, 7); x.fill();
+  x.fillStyle = 'rgba(0,0,0,.18)'; x.beginPath(); x.arc(0, 0, 40, 0, 7); x.fill();
+  x.save(); x.translate(-24, -19); x.scale(.35, .35); x.fillStyle = '#fff'; x.fill(LOGO_A); x.fill(LOGO_B); x.restore();
+  x.restore();
+  x.restore();
+}
+const LOOK = { skin: '#c98f6a', hair: '#1d1a2b', shirt: ['#b9a4ff', '#9a84ea'], wall: ['#34346e', '#0e0e24'] };
+
+function frame(t) {
+  x.clearRect(0, 0, W, H);
+  // 1. logo intro on black
+  if (t < 2.6) {
+    x.fillStyle = '#000'; x.fillRect(0, 0, W, H);
+    const a = ease(seg(t, .15, 1.1)), b = ease(seg(t, .3, 1.25));
+    logo(540, 470, 2.4, '#fff', (1 - a) * -700, (1 - b) * 700);
+    text('HYPERPAD', 540, 690, 46, 600, '#fff', 'center', SANS, ease(seg(t, 1.1, 1.7)), 18);
+    if (t > 2.2) { x.fillStyle = '#fbfbfd'; x.globalAlpha = seg(t, 2.2, 2.6); x.fillRect(0, 0, W, H); x.globalAlpha = 1; }
+    return;
+  }
+  lavender();
+  // 2. headline
+  if (t < 5.4) {
+    const o = 1 - seg(t, 5.0, 5.4);
+    const l1 = ease(seg(t, 2.7, 3.3)), l2 = ease(seg(t, 3.0, 3.6));
+    text('Launch a coin.', 540, 470 + (1 - l1) * 60, 104, 500, INK, 'center', SANS, l1 * o, -3);
+    text('Let the reels sell it.', 540, 600 + (1 - l2) * 60, 104, 500, INK, 'center', SANS, l2 * o, -3);
+    text('AI hosts make the videos. Trading pays for them.', 540, 700, 34, 400, '#6b6d80', 'center', SANS, ease(seg(t, 3.6, 4.2)) * o);
+    return;
+  }
+  // 3. fee split
+  if (t < 8.4) {
+    const o = 1 - seg(t, 8.0, 8.4), a = ease(seg(t, 5.5, 6.0));
+    text('Every trade pays a 1% fee', 540, 360, 64, 500, INK, 'center', SANS, a * o, -2);
+    const bw = 800, bx = 140, by = 470, grow = easeIO(seg(t, 6.0, 7.2));
+    const parts = [[.3, VIOLET, '0.3%', 'to the launcher'], [.5, CORAL, '0.5%', 'pays for reels'], [.2, HOUSE, '0.2%', 'to Hyperpad']];
+    let cx = bx;
+    parts.forEach(([f, col, pct, lbl], i) => {
+      const w = bw * f * grow - 8;
+      x.globalAlpha = o; x.fillStyle = col; rr(cx, by, Math.max(0, w), 44, 22); x.fill(); x.globalAlpha = 1;
+      const la = ease(seg(t, 6.4 + i * .25, 6.9 + i * .25)) * o;
+      text(pct, cx + bw * f / 2 - 4, by + 130, 58, 500, col === HOUSE ? '#6b6d80' : col, 'center', MONO, la);
+      text(lbl, cx + bw * f / 2 - 4, by + 175, 26, 400, '#6b6d80', 'center', SANS, la);
+      cx += bw * f;
+    });
+    return;
+  }
+  // 4. reel
+  if (t < 12) {
+    const o = 1 - seg(t, 11.6, 12), a = ease(seg(t, 8.4, 9.0));
+    x.globalAlpha = o;
+    text('Every $25 in fees', 110, 420, 62, 500, INK, 'left', SANS, a * o, -2);
+    text('books a new AI reel', 110, 495, 62, 500, INK, 'left', SANS, a * o, -2);
+    text('New host. New format.', 110, 575, 32, 400, '#6b6d80', 'left', SANS, ease(seg(t, 9.0, 9.5)) * o);
+    text('Posted to the feed.', 110, 620, 32, 400, '#6b6d80', 'left', SANS, ease(seg(t, 9.2, 9.7)) * o);
+    // phone
+    const px = 640, py = 150 + (1 - a) * 80, s = 1.12;
+    x.save(); x.globalAlpha = o;
+    x.fillStyle = INK; rr(px - 12, py - 12, 360 * s + 24, 640 * s + 24, 52); x.fill();
+    x.save(); rr(px, py, 360 * s, 640 * s, 42); x.clip();
+    host(px, py, s, t, true, LOOK);
+    const words = 'okay so I found a coin called HPAD'.split(' ');
+    const n = Math.floor(clamp((t - 9.0) / 1.9) * words.length);
+    x.font = `600 30px ${SANS}`; x.textAlign = 'left'; x.fillStyle = '#fff';
+    let lx = px + 24, ly = py + 540;
+    words.slice(0, n).forEach(w => { const ww = x.measureText(w + ' ').width; if (lx + ww > px + 260) { lx = px + 24; ly += 38; } x.fillStyle = w === 'HPAD' ? '#ffd84d' : '#fff'; x.fillText(w, lx, ly); lx += ww; });
+    x.fillStyle = 'rgba(255,255,255,.3)'; x.fillRect(px + 24, py + 640 * s - 90, 360 * s - 48, 5);
+    x.fillStyle = '#fff'; x.fillRect(px + 24, py + 640 * s - 90, (360 * s - 48) * seg(t, 8.4, 12), 5);
+    x.fillStyle = CORAL; rr(px + 360 * s - 190, py + 640 * s - 70, 166, 48, 24); x.fill();
+    text('Buy $HPAD', px + 360 * s - 107, py + 640 * s - 38, 22, 600, '#fff', 'center', SANS, o);
+    text('$HPAD · reel 1', px + 24, py + 50, 20, 500, '#fff', 'left', MONO, o);
+    x.restore(); x.restore(); x.globalAlpha = 1;
+    return;
+  }
+  // 5. zec tips
+  if (t < 13.8) {
+    const o = 1 - seg(t, 13.4, 13.8), a = ease(seg(t, 12.0, 12.5));
+    x.globalAlpha = a * o;
+    x.save(); x.translate(540, 360 + (1 - a) * 40);
+    x.fillStyle = '#fdf3dc'; x.beginPath(); x.arc(0, 0, 90, 0, 7); x.fill();
+    x.strokeStyle = '#9a6a00'; x.lineWidth = 9; x.lineJoin = 'round'; x.lineCap = 'round';
+    x.beginPath(); x.moveTo(0, -48); x.lineTo(-40, -32); x.lineTo(-40, 0); x.bezierCurveTo(-40, 28, -22, 46, 0, 56); x.bezierCurveTo(22, 46, 40, 28, 40, 0); x.lineTo(40, -32); x.closePath(); x.stroke();
+    x.beginPath(); x.moveTo(-16, 2); x.lineTo(-3, 15); x.lineTo(18, -8); x.stroke();
+    x.restore(); x.globalAlpha = 1;
+    text('Fans tip in ZEC. Shielded.', 540, 560, 64, 500, INK, 'center', SANS, a * o, -2);
+    text('Every tip goes straight into the reel jar.', 540, 630, 32, 400, '#6b6d80', 'center', SANS, ease(seg(t, 12.4, 12.9)) * o);
+    const ma = ease(seg(t, 12.7, 13.1)) * o;
+    x.globalAlpha = ma; x.fillStyle = '#fff'; rr(330, 690, 420, 70, 35); x.fill(); x.globalAlpha = 1;
+    text('0.1 ZEC · “make the next one an unboxing”', 540, 734, 22, 500, INK, 'center', SANS, ma);
+    return;
+  }
+  // 6. end card
+  x.fillStyle = '#000'; x.globalAlpha = seg(t, 13.8, 14.2); x.fillRect(0, 0, W, H); x.globalAlpha = 1;
+  const e = ease(seg(t, 14.0, 14.7));
+  logo(540, 400, 1.7, '#fff', (1 - e) * -300, (1 - e) * 300);
+  text('$HPAD is live', 540, 610, 84, 500, '#fff', 'center', SANS, ease(seg(t, 14.4, 15.0)), -2);
+  text('Launch a coin. Let the reels sell it.', 540, 680, 34, 400, '#b9b6d6', 'center', SANS, ease(seg(t, 14.7, 15.3)));
+  text('HYPERPAD', 540, 900, 28, 600, '#8b86c9', 'center', SANS, ease(seg(t, 15.0, 15.5)), 12);
+}
+window.DUR = DUR;
+window.renderAt = t => { frame(t); return c.toDataURL('image/jpeg', .92); };
+</script></body></html>

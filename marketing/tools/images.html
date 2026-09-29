@@ -1,0 +1,128 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root { --ink:#1b1c2b; --muted:#6b6d80; --violet:#5b5bf0; --coral:#ef4f7a; --house:#a3a5b8; --zec:#e8a317; --line:#e4e4ee; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #222; font-family: Geist, Arial, sans-serif; color: var(--ink); display: grid; gap: 40px; padding: 40px; justify-items: start; }
+.ab { position: relative; overflow: hidden; }
+.lav { background:
+  radial-gradient(55% 45% at 50% 108%, #7a5cff, transparent 72%),
+  radial-gradient(75% 60% at 50% 104%, #a98fff, transparent 72%),
+  radial-gradient(45% 50% at 5% 85%, #dfa6f3, transparent 70%),
+  radial-gradient(45% 50% at 95% 80%, #cdb8ff, transparent 70%),
+  radial-gradient(60% 40% at 50% 0%, #e9e0ff, transparent 72%), #fbfbfd; }
+.dots::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(91,91,240,.18) 1.4px, transparent 1.6px); background-size: 30px 30px; -webkit-mask-image: radial-gradient(70% 60% at 50% 40%, #000 20%, transparent 80%); }
+.mark { fill: currentColor; }
+.mono { font-family: "Geist Mono", monospace; }
+.card { background: rgba(255,255,255,.92); border-radius: 22px; box-shadow: 0 0 0 1px var(--line), 0 30px 60px -30px rgba(60,50,140,.4); }
+.chip { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,.9); border-radius: 14px; padding: 12px 16px; box-shadow: 0 0 0 1px var(--line), 0 12px 24px -12px rgba(60,50,140,.35); font-size: 20px; white-space: nowrap; }
+.chip i { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: #fff; font: 700 12px "Geist Mono", monospace; font-style: normal; }
+.pill { display: inline-block; padding: 12px 26px; border-radius: 999px; background: var(--violet); color: #fff; font-weight: 500; }
+.eyebrow { font: 500 20px "Geist Mono", monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--violet); margin: 0; }
+h1, h2 { font-weight: 500; letter-spacing: -.035em; margin: 0; line-height: 1.02; }
+.bar { display: flex; gap: 8px; }
+.bar span { height: 30px; border-radius: 15px; }
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute"><symbol id="lm" viewBox="0 0 136 110"><path d="M0 27H80C93 27 97 0 110 0H136V27H95C82 27 78 54 65 54H0Z"/><path d="M0 82H45C58 82 62 55 74 55H136V82H60C47 82 43 109 30 109H0Z"/></symbol></svg>
+
+<!-- 1. profile picture 400x400 -->
+<div class="ab" id="profile" style="width:400px;height:400px;background:#000;display:grid;place-items:center">
+  <svg class="mark" style="width:170px;height:138px;color:#fff"><use href="#lm"/></svg>
+</div>
+
+<!-- 2. X header 1500x500 -->
+<div class="ab lav dots" id="header" style="width:1500px;height:500px">
+  <svg class="mark" style="position:absolute;width:520px;height:420px;right:-90px;top:-40px;color:rgba(91,91,240,.08);transform:rotate(8deg)"><use href="#lm"/></svg>
+  <div style="position:absolute;left:520px;top:118px;right:80px">
+    <h1 style="font-size:84px">Launch a coin.<br>Let the reels sell it.</h1>
+    <p style="font-size:28px;color:var(--muted);margin:22px 0 0">AI hosts make the videos. Trading fees pay for them. Tips in ZEC.</p>
+  </div>
+  <div class="chip" style="position:absolute;left:1080px;top:52px"><i style="background:#5b5bf0">HP</i><b>Reel 1</b>&nbsp;posted for $HPAD</div>
+  <div class="chip" style="position:absolute;left:1120px;top:392px"><i style="background:#e8a317;color:#1b1c2b">Z</i><b>0.1 ZEC</b>&nbsp;shielded tip</div>
+</div>
+
+<!-- 3. launch announcement 1600x900 -->
+<div class="ab lav dots" id="launch" style="width:1600px;height:900px">
+  <div style="position:absolute;left:120px;top:150px;width:780px">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:60px"><svg class="mark" style="width:62px;height:50px;color:var(--ink)"><use href="#lm"/></svg><span style="font:600 26px Geist;letter-spacing:.24em">HYPERPAD</span></div>
+    <p class="eyebrow">Now live</p>
+    <h1 style="font-size:132px;margin-top:18px">$HPAD<br>is live.</h1>
+    <p style="font-size:34px;color:var(--muted);margin:30px 0 40px;line-height:1.4">Launch a coin in a minute. Every $25 in trading fees books a new AI reel about it.</p>
+    <span class="pill" style="font-size:28px">Launch a coin →</span>
+  </div>
+  <canvas id="phone1" width="360" height="640" style="position:absolute;right:170px;top:90px;width:405px;height:720px;border-radius:52px;box-shadow:0 0 0 12px #1b1c2b,0 60px 100px -40px rgba(40,30,120,.6);transform:rotate(3deg)"></canvas>
+  <div class="chip" style="position:absolute;right:500px;top:790px"><i style="background:#ef4f7a">HP</i><b>$2,500</b>&nbsp;buy · +$12.50 to reels</div>
+</div>
+
+<!-- 4. how it works 1080x1080 -->
+<div class="ab lav dots" id="how" style="width:1080px;height:1080px;padding:96px">
+  <p class="eyebrow" style="position:relative">How Hyperpad works</p>
+  <h2 style="font-size:76px;margin-top:22px;position:relative">From launch to feed<br>in three steps</h2>
+  <div style="display:grid;gap:22px;margin-top:56px;position:relative">
+    <div class="card" style="padding:30px 34px;display:flex;gap:26px;align-items:center"><span class="mono" style="font-size:22px;color:var(--violet);width:36px">01</span><div><b style="font-size:32px;font-weight:500">Set up in a minute</b><p style="margin:6px 0 0;font-size:23px;color:var(--muted)">Name, ticker, one pitch line, one picture.</p></div></div>
+    <div class="card" style="padding:30px 34px;display:flex;gap:26px;align-items:center"><span class="mono" style="font-size:22px;color:var(--violet);width:36px">02</span><div><b style="font-size:32px;font-weight:500">Trades pay the hosts</b><p style="margin:6px 0 0;font-size:23px;color:var(--muted)">Every $25 in fees books a new AI reel.</p></div></div>
+    <div class="card" style="padding:30px 34px;display:flex;gap:26px;align-items:center"><span class="mono" style="font-size:22px;color:var(--violet);width:36px">03</span><div><b style="font-size:32px;font-weight:500">Busy coins stay on screen</b><p style="margin:6px 0 0;font-size:23px;color:var(--muted)">Newest reel first, with a buy button under it.</p></div></div>
+  </div>
+  <div style="position:relative;margin-top:48px">
+    <div class="bar"><span style="width:30%;background:var(--violet)"></span><span style="width:50%;background:var(--coral)"></span><span style="width:20%;background:var(--house)"></span></div>
+    <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:22px;color:var(--muted)"><span><b class="mono" style="color:var(--violet)">0.3%</b> you</span><span><b class="mono" style="color:var(--coral)">0.5%</b> reels</span><span><b class="mono" style="color:#6b6d80">0.2%</b> Hyperpad</span></div>
+  </div>
+</div>
+
+<!-- 5. zec tips 1080x1080 -->
+<div class="ab lav dots" id="zec" style="width:1080px;height:1080px;padding:96px">
+  <p class="eyebrow" style="position:relative;color:#b07a00">Zcash tips</p>
+  <h2 style="font-size:84px;margin-top:22px;position:relative">Tip a coin in ZEC.<br>Keep it private.</h2>
+  <p style="position:relative;font-size:30px;color:var(--muted);margin:28px 0 0;line-height:1.4;max-width:820px">Shielded tips hide the sender, the receiver and the amount. Every tip goes straight into the coin's reel jar.</p>
+  <div class="card" style="position:relative;margin-top:60px;padding:14px 34px">
+    <div style="display:flex;align-items:center;gap:22px;padding:22px 0;border-bottom:1px solid var(--line)"><span style="width:52px;height:52px;border-radius:50%;background:#fdf3dc;display:grid;place-items:center;color:#9a6a00;font:700 22px Geist">✓</span><div style="flex:1"><b style="font-size:26px;font-weight:500">$HPAD · sender hidden</b><p style="margin:4px 0 0;font-size:21px;color:var(--muted)">“make the next one an unboxing”</p></div><span class="mono" style="font-size:26px">0.1 ZEC</span></div>
+    <div style="display:flex;align-items:center;gap:22px;padding:22px 0;border-bottom:1px solid var(--line)"><span style="width:52px;height:52px;border-radius:50%;background:#fdf3dc;display:grid;place-items:center;color:#9a6a00;font:700 22px Geist">✓</span><div style="flex:1"><b style="font-size:26px;font-weight:500">$HPAD · sender hidden</b><p style="margin:4px 0 0;font-size:21px;color:var(--muted)">“gm from a fan”</p></div><span class="mono" style="font-size:26px">0.05 ZEC</span></div>
+    <div style="display:flex;align-items:center;gap:22px;padding:22px 0"><span style="width:52px;height:52px;border-radius:50%;background:#fdf3dc;display:grid;place-items:center;color:#9a6a00;font:700 22px Geist">✓</span><div style="flex:1"><b style="font-size:26px;font-weight:500">$HPAD · sender hidden</b><p style="margin:4px 0 0;font-size:21px;color:var(--muted)">encrypted memo, up to 512 bytes</p></div><span class="mono" style="font-size:26px">0.25 ZEC</span></div>
+  </div>
+</div>
+
+<!-- 6. reel still 1080x1350 -->
+<div class="ab lav dots" id="reel" style="width:1080px;height:1350px">
+  <canvas id="phone2" width="360" height="640" style="position:absolute;left:300px;top:140px;width:480px;height:853px;border-radius:60px;box-shadow:0 0 0 14px #1b1c2b,0 60px 100px -40px rgba(40,30,120,.6)"></canvas>
+  <div style="position:absolute;left:0;right:0;bottom:120px;text-align:center"><h2 style="font-size:64px">This reel cost $25 in fees.</h2><p style="font-size:28px;color:var(--muted);margin:16px 0 0">Nobody typed a prompt. The coin's name, ticker and pitch did the work.</p></div>
+  <div class="chip" style="position:absolute;right:90px;top:300px"><i style="background:#5b5bf0">HP</i><b>Reel 1</b>&nbsp;· talking head</div>
+  <div class="chip" style="position:absolute;left:80px;top:720px"><i style="background:#ef4f7a">$</i><b>+$12.50</b>&nbsp;to the reel jar</div>
+</div>
+
+<script>
+const LOGO_A = new Path2D('M0 27H80C93 27 97 0 110 0H136V27H95C82 27 78 54 65 54H0Z');
+const LOGO_B = new Path2D('M0 82H45C58 82 62 55 74 55H136V82H60C47 82 43 109 30 109H0Z');
+function drawHost(cv, look, caption) {
+  const x = cv.getContext('2d'); const rr = (a,b,c,d,e) => { x.beginPath(); x.roundRect(a,b,c,d,e); };
+  const g = x.createLinearGradient(0,0,0,640); g.addColorStop(0, look.wall[0]); g.addColorStop(1, look.wall[1]); x.fillStyle = g; x.fillRect(0,0,360,640);
+  for (let i = 0; i < 9; i++) { x.fillStyle = `rgba(${i % 2 ? '255,110,160' : '160,150,255'},.14)`; x.beginPath(); x.arc((i*83+40)%400-20, 90+(i*57)%260, 18+(i%3)*10, 0, 7); x.fill(); }
+  x.save(); x.translate(180, 0);
+  x.fillStyle = look.shirt[0]; rr(-120,430,240,260,90); x.fill(); x.fillStyle = look.shirt[1]; rr(-40,430,80,40,20); x.fill();
+  x.fillStyle = look.skin; x.fillRect(-22,380,44,60); x.beginPath(); x.ellipse(0,320,78,92,0,0,7); x.fill();
+  x.fillStyle = look.hair; x.beginPath(); x.ellipse(0,262,86,52,0,Math.PI,0); x.fill();
+  if (look.bun) { x.beginPath(); x.arc(0,205,30,0,7); x.fill(); } else { x.beginPath(); x.ellipse(-60,280,26,40,.3,0,7); x.fill(); x.beginPath(); x.ellipse(62,276,22,34,-.4,0,7); x.fill(); }
+  x.fillStyle = '#1d1a2b'; x.beginPath(); x.ellipse(-28,318,7,9,0,0,7); x.fill(); x.beginPath(); x.ellipse(28,318,7,9,0,0,7); x.fill();
+  x.strokeStyle = '#1d1a2b'; x.lineWidth = 5; x.lineCap = 'round';
+  x.beginPath(); x.moveTo(-40,294); x.lineTo(-16,290); x.stroke(); x.beginPath(); x.moveTo(16,290); x.lineTo(40,294); x.stroke();
+  x.fillStyle = '#5a1f2c'; x.beginPath(); x.ellipse(0,362,20,12,0,0,7); x.fill();
+  x.restore();
+  x.save(); x.translate(276,480); x.rotate(-.12);
+  x.fillStyle = look.skin; x.beginPath(); x.ellipse(-10,40,22,18,0,0,7); x.fill();
+  x.fillStyle = '#5b5bf0'; x.beginPath(); x.arc(0,0,50,0,7); x.fill(); x.fillStyle = 'rgba(0,0,0,.18)'; x.beginPath(); x.arc(0,0,40,0,7); x.fill();
+  x.save(); x.translate(-24,-19); x.scale(.35,.35); x.fillStyle = '#fff'; x.fill(LOGO_A); x.fill(LOGO_B); x.restore(); x.restore();
+  const bg = x.createLinearGradient(0,470,0,640); bg.addColorStop(0,'rgba(6,8,18,0)'); bg.addColorStop(1,'rgba(6,8,18,.85)'); x.fillStyle = bg; x.fillRect(0,470,360,170);
+  x.font = '600 24px Geist, Arial'; x.textAlign = 'left';
+  let lx = 20, ly = 520;
+  caption.split(' ').forEach(w => { const ww = x.measureText(w + ' ').width; if (lx + ww > 230) { lx = 20; ly += 30; } x.fillStyle = w === 'HPAD' ? '#ffd84d' : '#fff'; x.fillText(w, lx, ly); lx += ww; });
+  x.fillStyle = 'rgba(255,255,255,.3)'; x.fillRect(20,588,320,3); x.fillStyle = '#fff'; x.fillRect(20,588,130,3);
+  x.fillStyle = '#ef4f7a'; rr(222,600,118,30,15); x.fill(); x.fillStyle = '#fff'; x.font = '600 14px Geist, Arial'; x.textAlign = 'center'; x.fillText('Buy $HPAD', 281, 620);
+  x.textAlign = 'left'; x.font = '500 12px "Geist Mono", monospace'; x.fillStyle = 'rgba(10,12,24,.55)'; rr(14,16,120,24,12); x.fill(); x.fillStyle = '#fff'; x.fillText('$HPAD · reel 1', 24, 32);
+}
+window.draw = () => {
+  drawHost(document.getElementById('phone1'), { skin: '#c98f6a', hair: '#1d1a2b', shirt: ['#b9a4ff','#9a84ea'], wall: ['#34346e','#0e0e24'] }, 'okay so I found a coin called HPAD');
+  drawHost(document.getElementById('phone2'), { skin: '#8d5a3b', hair: '#c9772e', shirt: ['#ffd166','#e6b447'], wall: ['#5a2d7a','#1c1232'], bun: true }, 'every trade pays for the next video');
+};
+</script>
+</body></html>
