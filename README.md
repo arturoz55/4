@@ -2,6 +2,10 @@
 
 Landing page for Hyperpad, a demo coin launchpad where trading fees pay for AI-made promo reels.
 
+Coin launchpad on Robinhood Chain. Contracts in `contracts/` (Hardhat), a Node server in `server/` for Railway, and a plain HTML, CSS and JavaScript site served by it. See **DEPLOY.md** (Spanish) for the full setup.
+
+The site runs in live mode when its server answers `/api/config`, and in demo mode (example coins, simulated trading) otherwise.
+
 Plain HTML, CSS and JavaScript with no build step. [Matter.js](https://brm.io/matter-js/) is loaded from cdnjs for the reel jar physics; the page still works without it.
 
 ## What works
@@ -28,11 +32,14 @@ Plain HTML, CSS and JavaScript with no build step. [Matter.js](https://brm.io/ma
 
 ## Run locally
 
+Demo mode only:
+
 ```sh
 python3 -m http.server 8000
-# open http://localhost:8000
 ```
+
+Full stack with a local chain: see the last section of DEPLOY.md.
 
 `build-preview.sh` inlines everything into `dist/preview.html`, a single-file preview.
 
-This is a demo: it creates no real tokens and moves no money.
+In demo mode nothing touches a chain. In live mode trades are real transactions on the configured network; start on testnet.
