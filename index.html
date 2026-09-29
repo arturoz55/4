@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1ec8b1d19f">
+<link rel="stylesheet" href="style.css?v=e9fd05876e">
 </head>
 <body>
 <!--BODY-START-->
@@ -79,6 +79,7 @@
     <a href="#zcash">ZEC tips</a>
     <a href="#feed">Feed</a>
     <a href="https://x.com/UseHyperpad" target="_blank" rel="noopener noreferrer">Follow @UseHyperpad on X ↗</a>
+    <button class="btn btn-soft" type="button" data-copy-ca>Copy $HYPERPAD CA</button>
     <button class="btn btn-primary" type="button" data-wallet>Connect wallet</button>
     <button class="btn btn-soft" type="button" data-login>Log in</button>
   </nav>
@@ -108,6 +109,12 @@
       <button class="btn btn-soft" type="button" id="heroWatch"><svg class="ic"><use href="#ic-play"/></svg>Watch the feed</button>
     </form>
     <p class="quick-err" id="quickErr" role="alert" hidden></p>
+    <div class="ca-row" aria-label="$HYPERPAD contract address">
+      <span class="ca-label">$HYPERPAD <b>CA</b></span>
+      <code class="ca-addr mono" title="0x44319d8f220acde80cf56f7bfb39278584370071">0x44319d8f220acde80cf56f7bfb39278584370071</code>
+      <button class="ca-btn" type="button" data-copy-ca aria-label="Copy the $HYPERPAD contract address"><svg class="ic"><use href="#ic-copy"/></svg><span>Copy</span></button>
+      <a class="ca-btn" href="https://robinhoodchain.blockscout.com/token/0x44319d8f220acde80cf56f7bfb39278584370071" target="_blank" rel="noopener noreferrer" aria-label="View $HYPERPAD on the Robinhood Chain explorer (opens in a new tab)"><svg class="ic"><use href="#ic-link"/></svg><span>Explorer</span></a>
+    </div>
   </div>
 
   <!-- DASHBOARD -->
@@ -418,7 +425,7 @@
     <nav class="foot-col" aria-label="Community"><p>Community</p><a href="https://x.com/UseHyperpad" target="_blank" rel="noopener noreferrer">X · @UseHyperpad ↗</a><button type="button" class="linkish" data-wallet>Connect wallet</button></nav>
     <nav class="foot-col" aria-label="Legal"><p>Legal</p><a href="#license" id="licenseLink">License</a><button type="button" class="linkish" data-cookies>Cookie settings</button><button type="button" class="linkish" id="toTop">Back to top ↑</button></nav>
   </div>
-  <p class="foot-legal">Hyperpad, 2026. The hosts in the reels are AI. This is a demo: no real tokens are created and no ZEC is moved. Zcash is a trademark of its respective owner; Hyperpad is not affiliated with it.</p>
+  <p class="foot-legal">Hyperpad, 2026. $HYPERPAD on Robinhood Chain: <button type="button" class="linkish mono" data-copy-ca title="Copy the contract address">0x44319d8f220acde80cf56f7bfb39278584370071</button>. The hosts in the reels are AI. The coins shown in the feed are examples until the launchpad goes live. Crypto is risky and you can lose what you put in. Zcash is a trademark of its respective owner; Hyperpad is not affiliated with it.</p>
 </footer>
 
 <!-- LAUNCH DIALOG -->
@@ -707,7 +714,7 @@ SOFTWARE.</pre>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
-<script src="main.js?v=38f5e8097f"></script>
+<script src="main.js?v=c93e06b718"></script>
 <!--BODY-END-->
 </body>
 </html>

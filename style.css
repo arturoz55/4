@@ -643,6 +643,16 @@ textarea[aria-invalid="true"], .fld input[aria-invalid="true"] { border-color: v
 .feed-empty-live { grid-column: 1 / -1; text-align: center; padding: 48px 16px; color: var(--muted); background: var(--surface); border-radius: var(--r); box-shadow: 0 0 0 1px var(--line); }
 .feed-empty-live .btn { margin-top: 14px; }
 
+/* ---------- token contract address ---------- */
+.ca-row { display: flex; align-items: center; gap: 6px; margin-top: 18px; padding: 6px 6px 6px 14px; max-width: 100%; border-radius: 999px; background: color-mix(in srgb, var(--surface) 75%, transparent); box-shadow: 0 0 0 1px var(--line); font-size: 13px; }
+.ca-label { color: var(--muted); white-space: nowrap; }
+.ca-label b { color: var(--violet); font-weight: 600; }
+.ca-addr { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-size: 12.5px; background: none; padding: 0 4px; user-select: all; }
+.ca-btn { display: inline-flex; align-items: center; gap: 5px; flex: none; border: 0; cursor: pointer; text-decoration: none; padding: 6px 11px; border-radius: 999px; background: var(--sunk); color: var(--ink); font: 500 12px var(--body); transition: background .15s, color .15s; }
+.ca-btn:hover { background: var(--violet); color: var(--violet-ink); }
+.ca-btn .ic { width: 13px; height: 13px; }
+.foot-legal .linkish.mono { font-size: 11.5px; word-break: break-all; text-decoration: underline dotted; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1500px) { .fchip.left { right: auto; left: 214px; top: auto !important; bottom: 18px; } .fchip.right { display: none; } }
 @media (max-width: 1080px) {
@@ -683,6 +693,8 @@ textarea[aria-invalid="true"], .fld input[aria-invalid="true"] { border-color: v
   .wallet-btn { position: relative; }
 }
 @media (max-width: 480px) {
+  .ca-btn span { display: none; }
+  .ca-row { width: 100%; }
   .bar { gap: 8px; }
   .btn-text { display: none; }
   .quick-field { width: 100%; }

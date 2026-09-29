@@ -833,6 +833,10 @@
     else fallback();
   }
 
+  // $HYPERPAD contract address: copy buttons in the hero, mobile menu and footer
+  const HYPERPAD_CA = '0x44319d8f220acde80cf56f7bfb39278584370071';
+  $$('[data-copy-ca]').forEach(b => b.addEventListener('click', () => copyText(HYPERPAD_CA, '$HYPERPAD contract address')));
+
   /* ---------- tip dialog ---------- */
   tipper = (() => {
     const m = $('#tip');
