@@ -502,6 +502,7 @@
     render();
     pushTape(c, size);
     if (dash) dash.onTrade(c, size, made);
+    if (size >= 2500) liveChip(c, `<b>$${esc(c.ticker)}</b> ${usd(size)} buy · +${usd(size * FEE * SHARE.reels, 2)} to reels`);
   }
   function fundJar(c, dollars) {
     c.fund += dollars;
@@ -522,6 +523,7 @@
     render(); drawZecBoard();
     tapeItems.unshift({ t: c.ticker, v: zec, zec: true }); tapeItems.length = Math.min(tapeItems.length, 10);
     if (dash) dash.onTip(c, made);
+    liveChip(c, `<b>${zecFmt(zec)} ZEC</b> ${pool === 'shielded' ? 'shielded tip' : 'tip'} for $${esc(c.ticker)}`);
     return made;
   }
 
@@ -569,6 +571,7 @@
       if (f >= 1 && !j.done) {
         j.done = true; j.doneAt = Date.now();
         toast(`New reel posted: $${j.c.ticker} reel ${j.n}`, { label: 'Watch', fn: () => player.openCoin(j.c) });
+        liveChip(j.c, `<b>Reel ${j.n}</b> posted for $${esc(j.c.ticker)}`);
       }
     }
     setInterval(() => {
@@ -581,6 +584,63 @@
     draw();
     return { add };
   })();
+
+
+  /* ---------- live decoration: chips, stats, scroll progress ---------- */
+  const chipsBox = $('#floatChips');
+  let chipSide = 0;
+  function liveChip(c, html) {
+    if (reduced || !chipsBox || document.hidden) return;
+    const el = document.createElement('div');
+    const side = chipSide++ % 2 ? 'right' : 'left';
+    el.className = 'fchip ' + side;
+    el.style.top = (18 + Math.random() * 55) + '%';
+    el.innerHTML = `<i style="background:${c.color}">${esc(c.ticker.slice(0, 2))}</i><span>${html}</span>`;
+    chipsBox.append(el);
+    while (chipsBox.children.length > 4) chipsBox.firstChild.remove();
+    setTimeout(() => el.remove(), 4300);
+  }
+  const statEls = $$('[data-stat]');
+  const statNow = {};
+  function statValues() {
+    return {
+      coins: coins.length,
+      reels: coins.reduce((a, c) => a + c.reels, 0),
+      paid: coins.reduce((a, c) => a + c.fees * SHARE.you, 0),
+      zec: allTips.reduce((a, t) => a + t.zec, 0)
+    };
+  }
+  const statFmt = { coins: v => Math.round(v).toLocaleString('en-US'), reels: v => Math.round(v).toLocaleString('en-US'), paid: v => usd(v), zec: v => v.toFixed(2) };
+  function drawStats(animate) {
+    const v = statValues();
+    statEls.forEach(el => {
+      const k = el.dataset.stat, from = statNow[k] ?? 0, to = v[k];
+      if (from === to) return;
+      statNow[k] = to;
+      if (!animate || reduced) { el.textContent = statFmt[k](to); return; }
+      const t0 = performance.now(), D = 900;
+      (function step(now) {
+        const f = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - f, 3);
+        el.textContent = statFmt[k](from + (to - from) * e);
+        if (f < 1) requestAnimationFrame(step);
+      })(t0);
+      el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+    });
+  }
+  // count up from zero the first time the band scrolls into view
+  const statsSec = $('.stats');
+  if ('IntersectionObserver' in window) {
+    const so = new IntersectionObserver(([e]) => { if (e.isIntersecting) { drawStats(true); so.disconnect(); } });
+    so.observe(statsSec);
+  } else drawStats(false);
+  setInterval(() => { if (!document.hidden && Object.keys(statNow).length) drawStats(true); }, 3000);
+
+  const scrollProg = $('#scrollProg');
+  const onProg = () => { const h = document.documentElement.scrollHeight - innerHeight; scrollProg.style.width = (h > 0 ? scrollY / h * 100 : 0) + '%'; };
+  addEventListener('scroll', onProg, { passive: true }); onProg();
+  $('#toTop').addEventListener('click', () => scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' }));
+  // FAQ: one answer open at a time
+  $$('.faq details').forEach(d => d.addEventListener('toggle', () => { if (d.open) $$('.faq details').forEach(o => { if (o !== d) o.open = false; }); }));
 
   let dash = null, tipper = null, player = null;
   // simulated market

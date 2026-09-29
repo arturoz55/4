@@ -35,6 +35,7 @@
 </svg>
 
 <a class="skip" href="#main">Skip to content</a>
+<div class="progress-top" id="scrollProg" aria-hidden="true"></div>
 
 <header class="bar" id="bar">
   <a class="brand" href="#top" aria-label="Hyperpad home">
@@ -80,6 +81,11 @@
 <main id="main">
 <!-- HERO -->
 <section class="hero" id="top">
+  <div class="hero-deco" aria-hidden="true">
+    <svg class="wm wm1"><use href="#logo-mark"/></svg>
+    <svg class="wm wm2"><use href="#logo-mark"/></svg>
+    <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
+  </div>
   <div class="hero-in">
     <h1 class="display">
       <span class="line">Launch a coin.</span>
@@ -100,6 +106,7 @@
 
   <!-- DASHBOARD -->
   <div class="app-wrap" id="app">
+    <div class="float-chips" id="floatChips" aria-hidden="true"></div>
     <div class="app" role="region" aria-label="Example coin dashboard">
       <aside class="app-side">
         <button class="coin-switch" type="button" id="coinSwitch" aria-label="Switch coin">
@@ -194,6 +201,15 @@
 
 <!-- TICKER TAPE -->
 <div class="tape" aria-hidden="true"><div class="tape-track" id="tape"></div></div>
+
+<!-- LIVE STATS -->
+<section class="stats" aria-label="Live totals">
+  <div class="stat"><p class="stat-v mono" data-stat="coins">0</p><p class="stat-k">coins live</p></div>
+  <div class="stat"><p class="stat-v mono" data-stat="reels">0</p><p class="stat-k">reels rendered</p></div>
+  <div class="stat"><p class="stat-v mono" data-stat="paid">$0</p><p class="stat-k">paid to launchers</p></div>
+  <div class="stat"><p class="stat-v mono" data-stat="zec">0</p><p class="stat-k">ZEC tipped</p></div>
+  <p class="stats-note">Totals from the example coins on this page, updating live.</p>
+</section>
 
 <!-- HOW -->
 <section class="section" id="how">
@@ -363,6 +379,22 @@
   <p class="empty" id="feedEmpty" hidden>No coins match that search. Try a shorter name or ticker.</p>
 </section>
 
+<!-- FAQ -->
+<section class="section faq" id="faq">
+  <header class="sec-head center">
+    <p class="eyebrow">Questions</p>
+    <h2 class="h2">What people ask before they launch</h2>
+  </header>
+  <div class="faq-list">
+    <details class="reveal" open><summary>What does it cost to launch a coin?</summary><p>Nothing up front. Hyperpad takes its share from trading fees: every trade pays 1%, split 0.3% to you, 0.5% to reels and 0.2% to Hyperpad.</p></details>
+    <details class="reveal"><summary>Who makes the reels?</summary><p>AI hosts. Each reel uses one of eight fixed formats and only your coin's name, ticker, pitch line and image. There are no free-text prompts and no real people in the videos.</p></details>
+    <details class="reveal"><summary>How often does my coin get a new reel?</summary><p>Every time $25 of reel fees builds up in its jar. At $10,000 of daily volume that is two reels a day. ZEC tips fill the same jar, so fans can speed it up.</p></details>
+    <details class="reveal"><summary>Why Zcash for tips?</summary><p>Shielded Zcash payments hide the sender, the receiver and the amount on chain, and they can carry an encrypted memo. Fans can back a coin without putting their wallet history on display.</p></details>
+    <details class="reveal"><summary>Can I post the reels somewhere else?</summary><p>Yes. Launchers own the reels made for their coin and can post them anywhere.</p></details>
+    <details class="reveal"><summary>Is this page live?</summary><p>No. This page is a demo with example coins and simulated trading. No tokens are created and no money or ZEC moves.</p></details>
+  </div>
+</section>
+
 <section class="cta">
   <h2 class="display sm">Your coin's first reel is $25 of trading away.</h2>
   <button class="btn btn-primary btn-lg" type="button" data-open-launch>Launch a coin <svg class="ic"><use href="#ic-arrow"/></svg></button>
@@ -370,9 +402,16 @@
 </main>
 
 <footer class="foot">
-  <a class="brand" href="#top"><svg class="logo" aria-hidden="true"><use href="#logo-mark"/></svg><span class="word">HYPERPAD</span></a>
-  <p>Hyperpad, 2026. The hosts in the reels are AI. This is a demo: no real tokens are created and no ZEC is moved. Zcash is a trademark of its respective owner; Hyperpad is not affiliated with it.</p>
-  <nav class="foot-nav" aria-label="Footer"><a href="#how">How it works</a><a href="#formats">Formats</a><a href="#feed">Feed</a><a href="#license" id="licenseLink">License</a></nav>
+  <div class="foot-top">
+    <div class="foot-brand">
+      <a class="brand" href="#top"><svg class="logo" aria-hidden="true"><use href="#logo-mark"/></svg><span class="word">HYPERPAD</span></a>
+      <p>Launch a coin. Let the reels sell it.</p>
+    </div>
+    <nav class="foot-col" aria-label="Product"><p>Product</p><a href="#app">Dashboard</a><a href="#reel">AI reels</a><a href="#formats">Formats</a><a href="#feed">Feed</a></nav>
+    <nav class="foot-col" aria-label="Money"><p>Money</p><a href="#fees">Fee calculator</a><a href="#zcash">ZEC tips</a><a href="#faq">FAQ</a></nav>
+    <nav class="foot-col" aria-label="Legal"><p>Legal</p><a href="#license" id="licenseLink">License</a><button type="button" class="linkish" id="toTop">Back to top ↑</button></nav>
+  </div>
+  <p class="foot-legal">Hyperpad, 2026. The hosts in the reels are AI. This is a demo: no real tokens are created and no ZEC is moved. Zcash is a trademark of its respective owner; Hyperpad is not affiliated with it.</p>
 </footer>
 
 <!-- LAUNCH DIALOG -->
