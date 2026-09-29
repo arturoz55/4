@@ -1,10 +1,14 @@
-# Hypereel
+# Hyperpad
 
-Landing page for Hypereel, a demo coin launchpad where trading fees pay for AI-made promo reels.
+Landing page for Hyperpad, a demo coin launchpad where trading fees pay for AI-made promo reels.
 
 Plain HTML, CSS and JavaScript with no build step. [Matter.js](https://brm.io/matter-js/) is loaded from cdnjs for the reel jar physics; the page still works without it.
 
 ## What works
+
+- A full-screen reel player: every coin gets its own AI host and a script built from its name, ticker and pitch line. Arrow keys, swipe or scroll move between coins, double-tap likes, and Buy and Tip ZEC work inside the player.
+- A live render queue: every $25 funds a reel that renders (sped up to 12 seconds) and posts with a Watch shortcut.
+- Fee sparklines on every coin card, coin bursts on trades and tips, and a live card preview in the launch form.
 
 - A live coin dashboard in the hero with Overview, Reels, Trades, Payouts and Settings views, a range-switchable fee chart with hover readouts, a coin switcher, Boost and Withdraw actions, and saved settings.
 - Zcash (ZEC) tips on every coin: shielded or transparent, an encrypted memo of up to 512 bytes on shielded tips, a QR code carrying a ZIP-321 payment request, copy buttons, a live board of recent tips, a ZEC view in the dashboard, and an optional Zcash address when launching a coin (format-checked). Every tip goes into the coin's reel jar. It uses demo addresses and an example rate of 1 ZEC = $40.

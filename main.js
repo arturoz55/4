@@ -1,4 +1,4 @@
-/* Hypereel landing page. Plain JS, no build step. Matter.js (optional) drives the reel jar. */
+/* Hyperpad landing page. Plain JS, no build step. Matter.js (optional) drives the reel jar. */
 (() => {
   'use strict';
   document.documentElement.classList.add('js');
@@ -19,12 +19,18 @@
   /* ---------- toast ---------- */
   const toastEl = $('#toast');
   let toastT;
-  function toast(msg) {
+  function toast(msg, action) {
     toastEl.textContent = msg;
+    if (action) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = action.label;
+      b.addEventListener('click', () => { toastEl.hidden = true; action.fn(); });
+      toastEl.append(b);
+    }
     toastEl.hidden = false;
     toastEl.style.animation = 'none'; void toastEl.offsetWidth; toastEl.style.animation = '';
     clearTimeout(toastT);
-    toastT = setTimeout(() => { toastEl.hidden = true; }, 2600);
+    toastT = setTimeout(() => { toastEl.hidden = true; }, action ? 5200 : 2800);
   }
 
   const root = document.documentElement;
@@ -47,110 +53,110 @@
     });
   }
 
-  /* ---------- hero reel (canvas, original host character) ---------- */
-  const reel = (() => {
-    const cv = $('#reelCanvas');
+  /* ---------- reel renderer (original AI host character, varies per coin) ---------- */
+  const HOSTS = ['Juniper', 'Rafa', 'Ines', 'Theo', 'Mika', 'Sol', 'Priya', 'Oskar', 'Lena', 'Kofi'];
+  const LOOKS = {
+    skin: ['#b77a57', '#8d5a3b', '#e0ac85', '#c98f6a', '#6e4630', '#f1c9a5'],
+    hair: ['#1d1a2b', '#5b3a24', '#c9772e', '#2d2d2d', '#e9d9b4', '#7a2f4a'],
+    shirt: [['#e2ff6b', '#c8e24f'], ['#7cc4ff', '#5aa6e6'], ['#ff9fb7', '#e87f9a'], ['#ffd166', '#e6b447'], ['#b9a4ff', '#9a84ea'], ['#8ef0c4', '#6ad3a5']],
+    wall: [['#2d3a7a', '#131832'], ['#5a2d7a', '#1c1232'], ['#1f5a5a', '#0f2626'], ['#7a3b2d', '#2a1510'], ['#34346e', '#0e0e24']]
+  };
+  function hostFor(key) {
+    let x = 0; for (const ch of key) x = (x * 33 + ch.charCodeAt(0)) >>> 0;
+    const pick = arr => arr[(x = (x * 1103515245 + 12345) >>> 0) % arr.length];
+    return { skin: pick(LOOKS.skin), hair: pick(LOOKS.hair), shirt: pick(LOOKS.shirt), wall: pick(LOOKS.wall), style: x % 3, name: pick(HOSTS) };
+  }
+  function scriptFor(c, n) {
+    const words = c.line.replace(/[.!?]+$/, '').toLowerCase().split(/\s+/).filter(Boolean);
+    const lines = [`okay so I found a coin called ${c.ticker}`];
+    for (let i = 0; i < words.length && lines.length < 3; i += 6) lines.push(words.slice(i, i + 6).join(' '));
+    lines.push('every trade pays for the next video', `this is reel ${n}. see you in the next one`);
+    return lines;
+  }
+  function makeReel(cv, cap, prog, opts = {}) {
     const ctx = cv.getContext('2d');
-    const cap = $('#caption');
-    const prog = $('#reelProg');
     const W = cv.width, H = cv.height;
-    const script = [
-      'okay so I found a coin called MOSSY',
-      'it is green, it is small, it likes grass',
-      'every trade pays for the next video',
-      'this one cost twenty five dollars. hi'
-    ];
-    const hot = new Set(['mossy', 'green', 'twenty', 'five', 'dollars.']);
-    const DUR = 10000;
-    let t0 = performance.now(), lineIdx = -1, wordsShown = 0, running = true;
-
-    function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
-
+    const DUR = opts.duration || 10000;
+    let spec = null, t0 = 0, lineIdx = -1, wordsShown = 0, running = false, ended = false, raf = 0;
+    function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
     function draw(now) {
-      const t = (((now - t0) % DUR + DUR) % DUR) / DUR;
+      const L = spec.look;
+      const raw = (now - t0) / DUR;
+      const t = opts.loop === false ? Math.min(1, Math.max(0, raw)) : ((raw % 1) + 1) % 1;
       const s = now / 1000;
-      // backdrop: soft studio wall
       const g = ctx.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, '#2d3a7a'); g.addColorStop(1, '#131832');
+      g.addColorStop(0, L.wall[0]); g.addColorStop(1, L.wall[1]);
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      // bokeh
       for (let i = 0; i < 9; i++) {
         const x = (i * 83 + s * 6) % (W + 60) - 30, y = 90 + (i * 57) % 260;
-        ctx.fillStyle = `rgba(${i % 2 ? '255,110,140' : '140,160,255'},.12)`;
+        ctx.fillStyle = `rgba(${i % 2 ? '255,110,160' : '160,150,255'},.12)`;
         ctx.beginPath(); ctx.arc(x, y, 18 + (i % 3) * 10, 0, 7); ctx.fill();
       }
-      // slow handheld sway
       const sx = Math.sin(s * .9) * 4, sy = Math.cos(s * 1.3) * 3;
-      ctx.save(); ctx.translate(W / 2 + sx, 0 + sy);
-      // body
-      ctx.fillStyle = '#e2ff6b';
-      roundRect(-120, 430, 240, 260, 90); ctx.fill();
-      ctx.fillStyle = '#c8e24f'; roundRect(-40, 430, 80, 40, 20); ctx.fill();
-      // neck + head
-      ctx.fillStyle = '#b77a57'; ctx.fillRect(-22, 380, 44, 60);
+      ctx.save(); ctx.translate(W / 2 + sx, sy);
+      ctx.fillStyle = L.shirt[0]; rr(-120, 430, 240, 260, 90); ctx.fill();
+      ctx.fillStyle = L.shirt[1]; rr(-40, 430, 80, 40, 20); ctx.fill();
+      ctx.fillStyle = L.skin; ctx.fillRect(-22, 380, 44, 60);
       ctx.beginPath(); ctx.ellipse(0, 320, 78, 92, 0, 0, 7); ctx.fill();
-      // hair
-      ctx.fillStyle = '#1d1a2b';
+      ctx.fillStyle = L.hair;
       ctx.beginPath(); ctx.ellipse(0, 262, 86, 52, 0, Math.PI, 0); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(-60, 280, 26, 40, .3, 0, 7); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(62, 276, 22, 34, -.4, 0, 7); ctx.fill();
-      // eyes (blink every ~3.2s)
-      const blink = (s % 3.2) < .12 ? .1 : 1;
-      const look = Math.sin(s * .7) * 3;
+      if (L.style === 0) { ctx.beginPath(); ctx.ellipse(-60, 280, 26, 40, .3, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(62, 276, 22, 34, -.4, 0, 7); ctx.fill(); }
+      if (L.style === 1) { ctx.beginPath(); ctx.arc(0, 205, 30, 0, 7); ctx.fill(); }
+      if (L.style === 2) { rr(-92, 250, 30, 150, 14); ctx.fill(); rr(62, 250, 30, 150, 14); ctx.fill(); }
+      const blink = (s % 3.2) < .12 ? .1 : 1, look = Math.sin(s * .7) * 3;
       ctx.fillStyle = '#1d1a2b';
       ctx.beginPath(); ctx.ellipse(-28 + look, 318, 7, 9 * blink, 0, 0, 7); ctx.fill();
       ctx.beginPath(); ctx.ellipse(28 + look, 318, 7, 9 * blink, 0, 0, 7); ctx.fill();
-      // brows
       ctx.strokeStyle = '#1d1a2b'; ctx.lineWidth = 5; ctx.lineCap = 'round';
       const br = Math.sin(s * 2.2) > .7 ? -4 : 0;
       ctx.beginPath(); ctx.moveTo(-40, 298 + br); ctx.lineTo(-16, 294 + br); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(16, 294 + br); ctx.lineTo(40, 298 + br); ctx.stroke();
-      // mouth: talks while a caption line is on screen
-      const talking = running && (t % .25) < .21;
+      const talking = running && t < .99 && (t * spec.script.length % 1) < .85;
       const open = talking ? 4 + Math.abs(Math.sin(s * 14)) * 12 : 3;
-      ctx.fillStyle = '#5a1f2c';
-      ctx.beginPath(); ctx.ellipse(0, 362, 20, open, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#5a1f2c'; ctx.beginPath(); ctx.ellipse(0, 362, 20, open, 0, 0, 7); ctx.fill();
       ctx.restore();
-      // held-up coin sign
+      // held-up coin sign in the coin's own colour
       const ly = 480 + Math.sin(s * 1.6) * 6;
       ctx.save(); ctx.translate(W / 2 + 96 + sx, ly + sy); ctx.rotate(-.12 + Math.sin(s) * .04);
-      ctx.fillStyle = '#b77a57'; ctx.beginPath(); ctx.ellipse(-10, 40, 22, 18, 0, 0, 7); ctx.fill();
-      ctx.fillStyle = '#3fae5a'; ctx.beginPath(); ctx.arc(0, 0, 48, 0, 7); ctx.fill();
-      ctx.fillStyle = '#2a8a44'; ctx.beginPath(); ctx.arc(0, 0, 38, 0, 7); ctx.fill();
-      ctx.fillStyle = '#eaffd9'; ctx.font = '800 22px "Bricolage Grotesque", Arial, sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$M', 0, 1);
+      ctx.fillStyle = L.skin; ctx.beginPath(); ctx.ellipse(-10, 40, 22, 18, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = spec.color; ctx.beginPath(); ctx.arc(0, 0, 48, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.arc(0, 0, 38, 0, 7); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '700 20px Geist, Arial, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$' + spec.ticker.slice(0, 3), 0, 1);
       ctx.restore();
-      // grain
       ctx.fillStyle = 'rgba(255,255,255,.025)';
       for (let i = 0; i < 40; i++) ctx.fillRect(Math.random() * W, Math.random() * H, 2, 2);
-
-      // captions
-      const li = Math.max(0, Math.min(script.length - 1, Math.floor(t * script.length)));
-      const lt = t * script.length - li;
-      const ws = script[li].split(' ');
-      const want = Math.min(ws.length, Math.ceil(lt * ws.length * 1.4));
+      // word-by-word captions
+      const sc = spec.script;
+      const li = Math.max(0, Math.min(sc.length - 1, Math.floor(t * sc.length)));
+      const ws = sc[li].split(' ');
+      const want = Math.min(ws.length, Math.ceil((t * sc.length - li) * ws.length * 1.4));
       if (li !== lineIdx) { lineIdx = li; wordsShown = 0; cap.textContent = ''; }
       while (wordsShown < want) {
-        const w = ws[wordsShown];
-        const sp = document.createElement('span');
-        sp.className = 'w' + (hot.has(w.toLowerCase()) ? ' hot' : '');
-        sp.textContent = w;
-        cap.append(sp, ' ');
-        wordsShown++;
+        const w = ws[wordsShown], sp = document.createElement('span');
+        sp.className = 'w' + (spec.hot.has(w.toLowerCase().replace(/[.,]/g, '')) ? ' hot' : '');
+        sp.textContent = w; cap.append(sp, ' '); wordsShown++;
       }
       prog.style.width = (t * 100).toFixed(2) + '%';
+      if (opts.loop === false && raw >= 1 && !ended) { ended = true; opts.onEnd && opts.onEnd(); }
     }
-    function loop(now) { draw(now); if (running) requestAnimationFrame(loop); }
-    if (reduced) { cap.textContent = script[0]; draw(t0 + 1200); running = false; }
-    else requestAnimationFrame(loop);
-    // pause when off-screen
-    if ('IntersectionObserver' in window && !reduced) {
-      new IntersectionObserver(([e]) => {
-        if (e.isIntersecting && !running) { running = true; requestAnimationFrame(loop); }
-        else if (!e.isIntersecting) running = false;
-      }).observe(cv);
-    }
-  })();
+    function loop(now) { if (!running) return; draw(now); raf = requestAnimationFrame(loop); }
+    return {
+      set(c, n) {
+        spec = { ticker: c.ticker, color: c.color, script: scriptFor(c, n), look: hostFor(c.ticker + n), hot: new Set([c.ticker.toLowerCase(), 'trade', 'video', 'reel']) };
+        t0 = performance.now(); lineIdx = -1; wordsShown = 0; ended = false; cap.textContent = '';
+        if (reduced) { cap.textContent = spec.script[0]; draw(t0 + 1500); }
+        return spec.look;
+      },
+      play() { if (reduced || running || !spec) return; running = true; raf = requestAnimationFrame(loop); },
+      pause() { running = false; cancelAnimationFrame(raf); }
+    };
+  }
+  const heroReel = makeReel($('#reelCanvas'), $('#caption'), $('#reelProg'));
+  heroReel.set({ ticker: 'MOSSY', color: '#2d9a55', line: 'A small green coin for people who like being outside.' }, 1);
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => { e.isIntersecting ? heroReel.play() : heroReel.pause(); }).observe($('#reelCanvas'));
+  } else heroReel.play();
 
   $('#buyMossy').addEventListener('click', () => {
     const c = coins.find(c => c.ticker === 'MOSSY');
@@ -267,8 +273,8 @@
     requestAnimationFrame(tick);
     return { drop };
   })();
-  $('#trade1').addEventListener('click', () => jar.drop(500));
-  $('#trade5').addEventListener('click', () => jar.drop(5000));
+  $('#trade1').addEventListener('click', e => { jar.drop(500); burst(e.currentTarget); });
+  $('#trade5').addEventListener('click', e => { jar.drop(5000); burst(e.currentTarget); });
 
   /* ---------- formats ---------- */
   const formats = [
@@ -373,12 +379,18 @@
     last: now - minsAgo * 60000, fund: (fees * SHARE.reels) % REEL_COST, mine: false, zecAddr: null, tipsOff: false
   }));
   coins.forEach(seedTips);
+  function seedHist(c) {
+    const r = seeded('hist' + c.ticker); let v = c.fees * (.55 + r() * .2);
+    c.hist = Array.from({ length: 24 }, (_, i) => (v += (c.fees - v) / (24 - i) * (0.3 + r() * 1.4)));
+    c.hist[23] = c.fees;
+  }
+  coins.forEach(seedHist);
   const mine = store.get('hr-coins', []);
   if (Array.isArray(mine)) {
     mine.filter(c => c && typeof c.ticker === 'string' && !coins.some(x => x.ticker === c.ticker))
       .forEach(c => coins.unshift({ ...c, mine: true, tips: [], fund: Number(c.fund) || 0, fees: Number(c.fees) || 0, reels: Number(c.reels) || 0 }));
   }
-  coins.forEach(c => { if (!Array.isArray(c.tips)) c.tips = []; c.tips.forEach(t => { t.coin = c; if (!allTips.includes(t)) allTips.push(t); }); });
+  coins.forEach(c => { if (!Array.isArray(c.hist) || !c.hist.length) c.hist = [c.fees, c.fees]; c.tips.forEach(t => { t.coin = c; if (!allTips.includes(t)) allTips.push(t); }); });
   // tips hold a back-reference to their coin, so strip it before saving
   function saveMine() { store.set('hr-coins', coins.filter(c => c.mine).map(c => ({ ...c, tips: c.tips.map(({ coin, ...t }) => t) }))); }
   const tipTotal = c => c.tips.reduce((a, t) => a + t.zec, 0);
@@ -403,8 +415,8 @@
       el.className = 'coin enter';
       el.addEventListener('animationend', e => { if (e.animationName === 'cardIn') el.classList.remove('enter'); });
       el.innerHTML = `
-        <div class="coin-top">
-          <div class="avatar" style="background:${c.color}">${c.img ? `<img src="${esc(c.img)}" alt="">` : esc(c.ticker.slice(0, 2))}</div>
+        <div class="coin-top" role="button" tabindex="0" aria-label="Watch $${esc(c.ticker)} reels">
+          <div class="avatar" style="background:${c.color}">${c.img ? `<img src="${esc(c.img)}" alt="">` : esc(c.ticker.slice(0, 2))}<span class="play"><svg class="ic"><use href="#ic-play"/></svg></span></div>
           <div class="coin-id">
             <h3>${esc(c.name)}${c.mine ? '<span class="badge-new">YOURS</span>' : ''}</h3>
             <p class="mono">$${esc(c.ticker)}</p>
@@ -416,6 +428,7 @@
           <div><dt>Fees</dt><dd class="mono" data-k="fees"></dd></div>
           <div><dt>Last reel</dt><dd class="mono" data-k="last"></dd></div>
         </dl>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path class="a"/><path class="l"/></svg>
         <div class="meter" aria-hidden="true"><span></span></div>
         <div class="meter-label mono"><span>next reel</span><span data-k="fund"></span></div>
         <p class="coin-tips mono"><svg class="ic"><use href="#ic-zec"/></svg><span data-k="tips"></span></p>
@@ -423,11 +436,15 @@
           <button class="btn btn-line btn-sm" type="button" data-act="buy">Buy $${esc(c.ticker)}</button>
           <button class="btn btn-zec btn-sm" type="button" data-act="tip"><svg class="ic"><use href="#ic-zec"/></svg>Tip ZEC</button>
         </div>`;
-      el.querySelector('[data-act="buy"]').addEventListener('click', () => {
+      el.querySelector('[data-act="buy"]').addEventListener('click', e => {
+        burst(e.currentTarget);
         trade(c, 1000);
         toast(`Demo trade: $1,000 of $${c.ticker}. No real money moved.`);
       });
       el.querySelector('[data-act="tip"]').addEventListener('click', () => tipper.open(c));
+      const top = el.querySelector('.coin-top');
+      top.addEventListener('click', () => player.openCoin(c));
+      top.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); player.openCoin(c); } });
       cards.set(c.ticker, el);
     }
     el.querySelector('[data-k="reels"]').textContent = c.reels;
@@ -436,6 +453,10 @@
     el.querySelector('[data-k="fund"]').textContent = `${usd(c.fund, 2)} / ${usd(REEL_COST)}`;
     el.querySelector('.meter span').style.width = (c.fund / REEL_COST * 100) + '%';
     el.querySelector('[data-k="tips"]').textContent = `${zecFmt(tipTotal(c)) || '0'} ZEC tipped · ${c.tips.length} tip${c.tips.length === 1 ? '' : 's'}`;
+    const h = c.hist, mn = Math.min(...h), mx = Math.max(...h), rng = mx - mn || 1;
+    const line = h.map((v, i) => `${i ? 'L' : 'M'}${(i / (h.length - 1) * 100).toFixed(1)} ${(27 - (v - mn) / rng * 24).toFixed(1)}`).join(' ');
+    el.querySelector('.spark .l').setAttribute('d', line);
+    el.querySelector('.spark .a').setAttribute('d', line + ' L100 30 L0 30 Z');
     const tb = el.querySelector('[data-act="tip"]');
     tb.disabled = !!c.tipsOff;
     tb.title = c.tipsOff ? 'This coin is not taking tips right now' : '';
@@ -475,6 +496,7 @@
   function trade(c, size) {
     const f = size * FEE;
     c.fees += f;
+    c.hist.push(c.fees); if (c.hist.length > 30) c.hist.shift();
     const made = fundJar(c, f * SHARE.reels);
     if (c.mine) saveMine();
     render();
@@ -484,7 +506,7 @@
   function fundJar(c, dollars) {
     c.fund += dollars;
     let made = 0;
-    while (c.fund >= REEL_COST) { c.fund -= REEL_COST; c.reels++; made++; }
+    while (c.fund >= REEL_COST) { c.fund -= REEL_COST; c.reels++; made++; queue.add(c, c.reels); }
     if (made) {
       c.last = Date.now();
       const el = cards.get(c.ticker);
@@ -502,7 +524,65 @@
     if (dash) dash.onTip(c, made);
     return made;
   }
-  let dash = null, tipper = null;
+
+  /* ---------- coin burst ---------- */
+  function burst(el, kind) {
+    if (reduced || !el) return;
+    const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    for (let i = 0; i < 12; i++) {
+      const d = document.createElement('i');
+      d.className = 'burst' + (kind === 'zec' ? ' z' : '');
+      d.textContent = kind === 'zec' ? 'Z' : '$';
+      const a = Math.random() * Math.PI * 2, dist = 40 + Math.random() * 70;
+      d.style.left = cx + 'px'; d.style.top = cy + 'px';
+      d.style.setProperty('--dx', Math.cos(a) * dist + 'px');
+      d.style.setProperty('--dy', Math.sin(a) * dist - 30 + 'px');
+      document.body.append(d);
+      setTimeout(() => d.remove(), 950);
+    }
+  }
+
+  /* ---------- render queue ---------- */
+  const queue = (() => {
+    const list = $('#queueList'), RENDER_MS = 12000, jobs = [];
+    function add(c, n) {
+      jobs.unshift({ c, n, start: Date.now(), done: false, el: null });
+      if (jobs.length > 5) jobs.length = 5;
+      draw();
+    }
+    function draw() {
+      list.innerHTML = '';
+      if (!jobs.length) { list.innerHTML = '<li class="queue-empty">Nothing rendering. The next reel starts when a coin fills its jar.</li>'; return; }
+      jobs.forEach(j => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="qa" style="background:${j.c.color}">${esc(j.c.ticker.slice(0, 2))}</span>
+          <div class="qt"><b>$${esc(j.c.ticker)}</b> <small>reel ${j.n} · ${esc(formats[j.n % formats.length].n.toLowerCase())} · host ${esc(hostFor(j.c.ticker + j.n).name)}</small><div class="qbar"><span></span></div></div>
+          <span class="qs"></span>`;
+        j.el = li; list.append(li); tick1(j);
+      });
+    }
+    function tick1(j) {
+      const f = Math.min(1, (Date.now() - j.start) / RENDER_MS);
+      j.el.querySelector('.qbar span').style.width = (f * 100) + '%';
+      j.el.querySelector('.qs').textContent = f >= 1 ? 'Posted' : Math.round(f * 100) + '%';
+      j.el.classList.toggle('done', f >= 1);
+      if (f >= 1 && !j.done) {
+        j.done = true; j.doneAt = Date.now();
+        toast(`New reel posted: $${j.c.ticker} reel ${j.n}`, { label: 'Watch', fn: () => player.openCoin(j.c) });
+      }
+    }
+    setInterval(() => {
+      if (document.hidden) return;
+      jobs.forEach(tick1);
+      const before = jobs.length;
+      for (let i = jobs.length - 1; i >= 0; i--) if (jobs[i].done && Date.now() - jobs[i].doneAt > 5000) jobs.splice(i, 1);
+      if (jobs.length !== before) draw();
+    }, 250);
+    draw();
+    return { add };
+  })();
+
+  let dash = null, tipper = null, player = null;
   // simulated market
   setInterval(() => {
     if (document.hidden) return;
@@ -532,18 +612,24 @@
   setInterval(drawTape, 20000);
 
   /* ---------- modals ---------- */
-  let lastFocus = null;
+  const modalStack = [];
   function openModal(m) {
-    lastFocus = document.activeElement;
+    if (!m.hidden) return;
+    modalStack.push({ m, focus: document.activeElement });
+    m.style.zIndex = 50 + modalStack.length;
     m.hidden = false;
     document.body.style.overflow = 'hidden';
     const f = m.querySelector('input, button:not(.modal-x)') || m.querySelector('button');
     setTimeout(() => f && f.focus(), 30);
   }
   function closeModal(m) {
+    if (m.hidden) return;
     m.hidden = true;
-    if ($$('.modal').every(x => x.hidden)) document.body.style.overflow = '';
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    const i = modalStack.findIndex(x => x.m === m);
+    const entry = i >= 0 ? modalStack.splice(i, 1)[0] : null;
+    if (!modalStack.length) document.body.style.overflow = '';
+    if (entry && entry.focus && entry.focus.focus) entry.focus.focus({ preventScroll: true });
+    m.dispatchEvent(new Event('modalclose'));
   }
   $$('.modal').forEach(m => {
     m.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeModal(m); });
@@ -559,8 +645,8 @@
   });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    const open = $$('.modal').filter(m => !m.hidden).pop();
-    if (open) closeModal(open);
+    const top = modalStack[modalStack.length - 1];
+    if (top) closeModal(top.m);
   });
   const launch = $('#launch'), license = $('#license');
   $('#licenseLink').addEventListener('click', e => { e.preventDefault(); openModal(license); });
@@ -677,9 +763,10 @@
     memo.addEventListener('input', update);
     $('#tipCopyAddr').addEventListener('click', () => copyText(addrFor(), 'Address'));
     $('#tipCopyUri').addEventListener('click', () => copyText($('#tipUri').textContent, 'Payment request'));
-    $('#tipSent').addEventListener('click', () => {
+    $('#tipSent').addEventListener('click', e => {
       const a = parseAmt();
       if (a.err) return;
+      burst(e.currentTarget, 'zec');
       const made = addTip(coin, a.n, pool, pool === 'shielded' ? memo.value.trim() : '');
       closeModal(m);
       toast(`Demo tip recorded: ${zecFmt(a.n)} ZEC (${usd(a.n * ZEC_USD, 2)}) went to $${coin.ticker}'s reel jar${made ? `. Reel ${coin.reels} is rendering.` : '.'}`);
@@ -700,6 +787,65 @@
     };
   })();
   $('#zecTry').addEventListener('click', () => tipper.open(coins.find(c => c.ticker === 'MOSSY') || coins[0]));
+
+
+  /* ---------- reel player ---------- */
+  player = (() => {
+    const m = $('#player'), stage = $('#plStage');
+    let list = [], i = 0;
+    const r = makeReel($('#plCanvas'), $('#plCap'), $('#plProg'), { loop: false, duration: 9000, onEnd: () => go(1, true) });
+    function load(dir) {
+      const c = list[i], n = Math.max(1, c.reels);
+      const look = r.set(c, n);
+      $('#plChip').textContent = `$${c.ticker} · reel ${n}`;
+      $('#plFmt').textContent = formats[n % formats.length].n.toLowerCase();
+      $('#plName').textContent = c.name;
+      $('#plSub').textContent = `host: ${look.name} · ${usd(c.fees)} in fees`;
+      $('#plBuy').textContent = `Buy $${c.ticker}`;
+      $('#plTip').disabled = !!c.tipsOff;
+      $('#plCount').textContent = `${i + 1} / ${list.length}`;
+      if (dir) { stage.style.setProperty('--from', dir > 0 ? '60px' : '-60px'); stage.classList.remove('swap'); void stage.offsetWidth; stage.classList.add('swap'); }
+      r.play();
+    }
+    function go(d, auto) {
+      if (!list.length) return;
+      if (auto && i === list.length - 1) { i = 0; } else i = (i + d + list.length) % list.length;
+      load(d);
+    }
+    function open(start) {
+      list = sorted();
+      if (!list.length) list = coins.slice();
+      i = Math.max(0, list.indexOf(start));
+      openModal(m);
+      load(0);
+    }
+    m.addEventListener('modalclose', () => r.pause());
+    $('#plNext').addEventListener('click', () => go(1));
+    $('#plPrev').addEventListener('click', () => go(-1));
+    $('#plBuy').addEventListener('click', e => { const c = list[i]; trade(c, 1000); burst(e.currentTarget); toast(`Demo trade: $1,000 of $${c.ticker}. No real money moved.`); $('#plSub').textContent = `host: ${hostFor(c.ticker + Math.max(1, c.reels)).name} · ${usd(c.fees)} in fees`; });
+    $('#plTip').addEventListener('click', () => { r.pause(); tipper.open(list[i]); });
+    $('#tip').addEventListener('modalclose', () => { if (!m.hidden) r.play(); });
+    m.addEventListener('keydown', e => {
+      if (e.target.closest('input, textarea')) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+    });
+    // swipe and wheel
+    let y0 = null, wheelLock = 0;
+    stage.addEventListener('pointerdown', e => { if (!e.target.closest('button')) y0 = e.clientY; });
+    stage.addEventListener('pointerup', e => { if (y0 == null) return; const dy = e.clientY - y0; y0 = null; if (Math.abs(dy) > 50) go(dy < 0 ? 1 : -1); });
+    stage.addEventListener('wheel', e => { e.preventDefault(); const t = Date.now(); if (t - wheelLock < 600 || Math.abs(e.deltaY) < 20) return; wheelLock = t; go(e.deltaY > 0 ? 1 : -1); }, { passive: false });
+    // double-tap to like
+    stage.addEventListener('dblclick', e => {
+      if (e.target.closest('button')) return;
+      const rct = stage.getBoundingClientRect(), h = document.createElement('i');
+      h.textContent = '♥'; h.style.left = (e.clientX - rct.left) + 'px'; h.style.top = (e.clientY - rct.top) + 'px';
+      $('#plLike').append(h); setTimeout(() => h.remove(), 950);
+    });
+    return { openCoin: open };
+  })();
+  $('#watchFeed').addEventListener('click', () => player.openCoin(sorted()[0]));
+  $('#heroWatch').addEventListener('click', () => player.openCoin(sorted()[0]));
 
   /* ---------- header dropdowns ---------- */
   const dds = $$('.dd');
@@ -970,10 +1116,18 @@
     $('#lfZecHint').textContent = 'Leave empty to skip ZEC tips. Unified (u1), Sapling (zs1) and transparent (t1, t3) addresses work.';
     lfTicker.parentElement.classList.remove('bad');
     $('#launchForm').hidden = false; $('#launchDone').hidden = true;
+    pvColor = palette[Math.floor(Math.random() * palette.length)];
+    preview();
   }
   $$('[data-open-launch]').forEach(b => b.addEventListener('click', () => { resetLaunch(); openModal(launch); }));
 
   const cleanTicker = v => v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  const quickBtn = $('#quickForm button[type="submit"]');
+  $('#quickTicker').addEventListener('input', () => {
+    const t = cleanTicker($('#quickTicker').value);
+    quickBtn.textContent = t ? `Launch $${t}` : 'Launch coin';
+    $('#quickErr').hidden = true;
+  });
   [lfTicker, $('#quickTicker')].forEach(i => i.addEventListener('input', () => {
     const pos = i.selectionStart, before = i.value.length;
     i.value = cleanTicker(i.value);
@@ -981,6 +1135,18 @@
     try { i.setSelectionRange(p, p); } catch { /* ignore */ }
   }));
   lfLine.addEventListener('input', () => { $('#lfCount').textContent = `${lfLine.value.length}/80`; });
+  let pvColor = palette[0];
+  function preview() {
+    const t = cleanTicker(lfTicker.value), n = lfName.value.trim();
+    $('#pvName').textContent = n || 'Your coin';
+    $('#pvTicker').textContent = '$' + (t || 'TICKER');
+    $('#pvLine').textContent = lfLine.value.trim() || 'Your pitch line shows up here.';
+    const av = $('#pvAv');
+    av.style.background = pvColor;
+    av.innerHTML = imgData ? `<img src="${esc(imgData)}" alt="">` : esc((t || n.toUpperCase().replace(/[^A-Z0-9]/g, '') || 'HP').slice(0, 2));
+    $('#lfSubmit').textContent = t ? `Launch $${t}` : 'Launch coin';
+  }
+  [lfName, lfTicker, lfLine].forEach(i => i.addEventListener('input', preview));
   const lfZec = $('#lfZec'), lfZecHint = $('#lfZecHint');
   const ZEC_HINT = 'Leave empty to skip ZEC tips. Unified (u1), Sapling (zs1) and transparent (t1, t3) addresses work.';
   lfZec.addEventListener('input', () => {
@@ -1022,6 +1188,7 @@
       imgData = c.toDataURL('image/webp', .85);
       if (!imgData.startsWith('data:image/webp')) imgData = c.toDataURL('image/png');
       lfPrev.src = imgData; lfPrev.hidden = false;
+      preview();
       lfDropTxt.lastChild.textContent = ' ' + file.name;
       URL.revokeObjectURL(url);
       lfErr.hidden = true;
@@ -1059,8 +1226,8 @@
     if (zr && zr.err) return showErr(zr.err, lfZec);
     const coin = {
       name, ticker, line, reels: 0, fees: 0, fund: 0,
-      color: palette[Math.floor(Math.random() * palette.length)],
-      img: imgData, last: Date.now(), created: Date.now(), mine: true,
+      color: pvColor,
+      img: imgData, hist: [0, 0], last: Date.now(), created: Date.now(), mine: true,
       zecAddr: zr ? zr.addr : null, tipsOff: !zr, tips: []
     };
     coins.unshift(coin);
@@ -1071,6 +1238,7 @@
     render();
     $('#doneTicker').textContent = ticker;
     $('#launchForm').hidden = true; $('#launchDone').hidden = false;
+    burst($('#doneTicker'));
     $('#doneGo').focus();
   });
   $('#doneGo').addEventListener('click', () => {

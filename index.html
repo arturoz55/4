@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Hypereel</title>
+<title>Hyperpad</title>
 <meta name="description" content="Launch a coin. Its trading fees pay for AI reels that promote it. The busiest coins get the most reels.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23000'/%3E%3Cg transform='translate(14 17.5) scale(.265)' fill='%23fff'%3E%3Cpath d='M0 27H80C93 27 97 0 110 0H136V27H95C82 27 78 54 65 54H0Z'/%3E%3Cpath d='M0 82H45C58 82 62 55 74 55H136V82H60C47 82 43 109 30 109H0Z'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -14,6 +15,7 @@
 <body>
 <!--BODY-START-->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo-mark" viewBox="0 0 136 110"><path class="lm-a" d="M0 27H80C93 27 97 0 110 0H136V27H95C82 27 78 54 65 54H0Z"/><path class="lm-b" d="M0 82H45C58 82 62 55 74 55H136V82H60C47 82 43 109 30 109H0Z"/></symbol>
   <symbol id="ic-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
@@ -35,9 +37,9 @@
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="bar" id="bar">
-  <a class="brand" href="#top" aria-label="Hypereel home">
-    <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="M10 9.2v5.6l5-2.8z"/></svg></span>
-    <span class="word">HYPEREEL</span>
+  <a class="brand" href="#top" aria-label="Hyperpad home">
+    <svg class="logo" aria-hidden="true"><use href="#logo-mark"/></svg>
+    <span class="word">HYPERPAD</span>
   </a>
   <nav class="nav" aria-label="Main">
     <div class="dd">
@@ -91,7 +93,7 @@
         <input id="quickTicker" name="ticker" maxlength="8" autocomplete="off" spellcheck="false" placeholder="Enter a ticker">
         <button class="btn btn-primary" type="submit">Launch coin</button>
       </div>
-      <a class="btn btn-soft" href="#feed">Browse the feed</a>
+      <button class="btn btn-soft" type="button" id="heroWatch"><svg class="ic"><use href="#ic-play"/></svg>Watch the feed</button>
     </form>
     <p class="quick-err" id="quickErr" role="alert" hidden></p>
   </div>
@@ -263,9 +265,9 @@
       <div><dt>Total fees</dt><dd class="mono" id="cFees">$500</dd></div>
       <div><dt>Your cut</dt><dd class="mono" id="cYou">$150</dd></div>
       <div><dt>Reels funded</dt><dd class="mono" id="cReels">10</dd></div>
-      <div><dt>Hypereel</dt><dd class="mono" id="cHouse">$100</dd></div>
+      <div><dt>Hyperpad</dt><dd class="mono" id="cHouse">$100</dd></div>
     </dl>
-    <p class="fine">Figures come from the 1% fee: 30% to you, 50% to reels, 20% to Hypereel. One reel costs $25.</p>
+    <p class="fine">Figures come from the 1% fee: 30% to you, 50% to reels, 20% to Hyperpad. One reel costs $25.</p>
   </div>
 
   <div class="pit reveal">
@@ -349,6 +351,14 @@
     </div>
   </header>
   <p class="fine sample-note">Example coins with simulated trading, for demonstration.</p>
+  <div class="queue" id="renderQueue" aria-live="polite">
+    <div class="queue-head">
+      <p class="card-k"><span class="dot live"></span> Render queue</p>
+      <button class="btn btn-primary btn-xs" type="button" id="watchFeed"><svg class="ic"><use href="#ic-play"/></svg>Watch the feed</button>
+    </div>
+    <ul class="queue-list" id="queueList"></ul>
+    <p class="fine queue-note">A reel takes about 8 minutes to render. The demo speeds this up to 12 seconds.</p>
+  </div>
   <div class="feed" id="feedGrid" aria-live="polite"></div>
   <p class="empty" id="feedEmpty" hidden>No coins match that search. Try a shorter name or ticker.</p>
 </section>
@@ -360,8 +370,8 @@
 </main>
 
 <footer class="foot">
-  <a class="brand" href="#top"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="M10 9.2v5.6l5-2.8z"/></svg></span><span class="word">HYPEREEL</span></a>
-  <p>Hypereel, 2026. The hosts in the reels are AI. This is a demo: no real tokens are created and no ZEC is moved. Zcash is a trademark of its respective owner; Hypereel is not affiliated with it.</p>
+  <a class="brand" href="#top"><svg class="logo" aria-hidden="true"><use href="#logo-mark"/></svg><span class="word">HYPERPAD</span></a>
+  <p>Hyperpad, 2026. The hosts in the reels are AI. This is a demo: no real tokens are created and no ZEC is moved. Zcash is a trademark of its respective owner; Hyperpad is not affiliated with it.</p>
   <nav class="foot-nav" aria-label="Footer"><a href="#how">How it works</a><a href="#formats">Formats</a><a href="#feed">Feed</a><a href="#license" id="licenseLink">License</a></nav>
 </footer>
 
@@ -400,8 +410,15 @@
             <small class="hint" id="lfZecHint">Leave empty to skip ZEC tips. Unified (u1), Sapling (zs1) and transparent (t1, t3) addresses work.</small>
           </div>
         </div>
+        <div class="lf-preview" aria-label="Card preview">
+          <p class="lbl">Preview in the feed</p>
+          <div class="coin mini" id="lfCard">
+            <div class="coin-top"><div class="avatar" id="pvAv">MO</div><div class="coin-id"><h3 id="pvName">Your coin</h3><p class="mono" id="pvTicker">$TICKER</p></div></div>
+            <p class="coin-line" id="pvLine">Your pitch line shows up here.</p>
+          </div>
+        </div>
         <p class="lf-err" id="lfErr" role="alert" hidden></p>
-        <button class="btn btn-primary btn-block" type="submit">Launch coin</button>
+        <button class="btn btn-primary btn-block" type="submit" id="lfSubmit">Launch coin</button>
         <p class="fine">You earn 0.30% of every trade. This demo adds your coin to the feed on this device only.</p>
       </form>
     </div>
@@ -419,7 +436,7 @@
   <div class="modal-card">
     <button class="icon-btn modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#ic-close"/></svg></button>
     <h2 id="licTitle" class="h3">MIT License</h2>
-    <pre class="lic mono">Copyright (c) 2026 Hypereel
+    <pre class="lic mono">Copyright (c) 2026 Hyperpad
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -490,13 +507,43 @@ SOFTWARE.</pre>
   </div>
 </div>
 
+<!-- REEL PLAYER -->
+<div class="modal player" id="player" role="dialog" aria-modal="true" aria-label="Reel player" hidden>
+  <div class="modal-bg" data-close></div>
+  <div class="player-in">
+    <button class="icon-btn modal-x light" type="button" data-close aria-label="Close player"><svg class="ic"><use href="#ic-close"/></svg></button>
+    <div class="pl-stage" id="plStage">
+      <canvas id="plCanvas" width="360" height="640" aria-hidden="true"></canvas>
+      <div class="reel-top"><span class="chip mono" id="plChip">$MOSSY · reel 14</span><span class="chip mono ghost" id="plFmt">talking head</span></div>
+      <p class="caption" id="plCap"></p>
+      <div class="pl-like" id="plLike" aria-hidden="true"></div>
+      <div class="reel-bottom">
+        <div class="progress"><span id="plProg"></span></div>
+        <div class="reel-row">
+          <div class="pl-id"><p class="reel-name" id="plName">Mossy</p><p class="reel-sub mono" id="plSub">host: Juniper</p></div>
+          <div class="pl-acts">
+            <button class="btn btn-zec btn-xs" type="button" id="plTip"><svg class="ic"><use href="#ic-zec"/></svg>Tip</button>
+            <button class="btn btn-buy" type="button" id="plBuy">Buy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pl-nav">
+      <button class="icon-btn light" type="button" id="plPrev" aria-label="Previous coin"><svg class="ic" style="transform:rotate(180deg)"><use href="#ic-chev"/></svg></button>
+      <p class="pl-count mono" id="plCount">1 / 8</p>
+      <button class="icon-btn light" type="button" id="plNext" aria-label="Next coin"><svg class="ic"><use href="#ic-chev"/></svg></button>
+    </div>
+    <p class="pl-hint">Use the arrow keys or swipe up and down. Double-tap to like.</p>
+  </div>
+</div>
+
 <!-- LOGIN DIALOG -->
 <div class="modal" id="login" role="dialog" aria-modal="true" aria-labelledby="loginTitle" hidden>
   <div class="modal-bg" data-close></div>
   <div class="modal-card narrow">
     <button class="icon-btn modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#ic-close"/></svg></button>
     <form id="loginForm" novalidate>
-      <h2 id="loginTitle" class="h3">Log in to Hypereel</h2>
+      <h2 id="loginTitle" class="h3">Log in to Hyperpad</h2>
       <div class="fld">
         <label for="loginEmail">Email</label>
         <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com">

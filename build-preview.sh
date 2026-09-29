@@ -10,7 +10,7 @@ head = html.split('<!--BODY-START-->')[0]
 body = html.split('<!--BODY-START-->')[1].split('<!--BODY-END-->')[0]
 fonts = re.search(r'<link href="https://fonts[^>]+>', head).group(0)
 body = body.replace('<script src="main.js"></script>', '<script>\n' + open('main.js').read() + '\n</script>')
-out = '<title>Hypereel</title>\n' + fonts + '\n<style>\n' + open('style.css').read() + '\n</style>\n' + body
+out = '<title>Hyperpad</title>\n' + fonts + '\n<style>\n' + open('style.css').read() + '\n</style>\n' + body
 open('dist/preview.html', 'w').write(out)
 PY
 echo "wrote dist/preview.html"
