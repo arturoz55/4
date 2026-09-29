@@ -9,13 +9,15 @@
   /* ---------- splash screen ---------- */
   const splash = document.getElementById('splash');
   const splashDone = new Promise(resolve => {
+    window.__hpBooted = true; // tells the inline watchdog in index.html that the app started
     if (!splash) { document.documentElement.classList.add('splash-done'); return resolve(); }
     document.body.classList.add('splashing');
     const bar = document.getElementById('splashBar'), tag = document.getElementById('splashTag');
     const tags = ['Loading the feed…', 'Waking up the hosts…', 'Filling the reel jars…', 'Ready'];
     const go = document.getElementById('splashGo');
     const t0 = performance.now(), MIN = matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 1600, MAX = 6000;
-    let loaded = document.readyState === 'complete', ready = false, closed = false, ti = 0;
+    // Ready when the page itself is parsed; third-party libraries keep loading in the background.
+    let loaded = document.readyState !== 'loading', ready = false, closed = false, ti = 0;
     const tick = setInterval(() => {
       const el = performance.now() - t0;
       const f = loaded ? Math.min(1, el / MIN) : Math.min(.85, el / MAX);
@@ -41,7 +43,7 @@
       document.body.classList.remove('splashing');
       setTimeout(() => { splash.remove(); resolve(); }, 650);
     }
-    addEventListener('load', () => { loaded = true; });
+    document.addEventListener('DOMContentLoaded', () => { loaded = true; });
     go.addEventListener('click', close);
     // Enter works even if focus moved off the button
     addEventListener('keydown', e => { if (e.key === 'Enter' && ready && !closed) { e.preventDefault(); close(); } });
@@ -260,8 +262,15 @@
     const amtEl = $('#jarAmt'), fill = $('#jarFill'), hint = $('#jarHint'), reelsEl = $('#jarReels');
     const COIN_VALUE = 0.5;
     let amount = 0, reels = 0, queue = 0, W = 0, H = 0, dpr = 1;
-    const M = window.Matter;
-    let engine, walls = [], bodies = [];
+    // Matter.js loads asynchronously; the jar picks it up whenever it arrives.
+    let M = null, engine, walls = [], bodies = [];
+    function ensureEngine() {
+      if (engine || !window.Matter) return;
+      M = window.Matter;
+      engine = M.Engine.create();
+      engine.gravity.y = 1.1;
+      size();
+    }
 
     function css(name) { return getComputedStyle(root).getPropertyValue(name).trim(); }
     function size() {
@@ -280,11 +289,8 @@
         M.Composite.add(engine.world, walls);
       }
     }
-    if (M) {
-      engine = M.Engine.create();
-      engine.gravity.y = 1.1;
-    }
     size();
+    ensureEngine();
     new ResizeObserver(size).observe(box);
 
     function spawn() {
@@ -320,6 +326,7 @@
     }
     let last = 0;
     function tick(now) {
+      if (!engine) ensureEngine();
       if (queue > 0 && now - last > 45) {
         last = now; queue--;
         if (M) spawn();
