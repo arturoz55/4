@@ -13,28 +13,38 @@
     document.body.classList.add('splashing');
     const bar = document.getElementById('splashBar'), tag = document.getElementById('splashTag');
     const tags = ['Loading the feed…', 'Waking up the hosts…', 'Filling the reel jars…', 'Ready'];
-    const t0 = performance.now(), MIN = matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 1600, MAX = 4000;
-    let loaded = document.readyState === 'complete', closed = false, ti = 0;
+    const go = document.getElementById('splashGo');
+    const t0 = performance.now(), MIN = matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 1600, MAX = 6000;
+    let loaded = document.readyState === 'complete', ready = false, closed = false, ti = 0;
     const tick = setInterval(() => {
       const el = performance.now() - t0;
       const f = loaded ? Math.min(1, el / MIN) : Math.min(.85, el / MAX);
       bar.style.width = (f * 100) + '%';
       const want = Math.min(tags.length - 1, Math.floor(f * (tags.length - 1) + .15));
       if (want !== ti) { ti = want; tag.textContent = tags[ti]; }
-      if ((loaded && el >= MIN) || el >= MAX) close();
+      if ((loaded && el >= MIN) || el >= MAX) showGo();
     }, 80);
-    function close() {
-      if (closed) return;
-      closed = true; clearInterval(tick);
+    // once loaded, wait on the visitor: the Continue button opens the page
+    function showGo() {
+      if (ready) return;
+      ready = true; clearInterval(tick);
       bar.style.width = '100%';
+      tag.textContent = 'Ready';
+      go.hidden = false;
+      go.focus({ preventScroll: true });
+    }
+    function close() {
+      if (closed || !ready) return;
+      closed = true;
       document.documentElement.classList.add('splash-done'); // reveal the page underneath as the splash fades
       splash.classList.add('out');
       document.body.classList.remove('splashing');
       setTimeout(() => { splash.remove(); resolve(); }, 650);
     }
     addEventListener('load', () => { loaded = true; });
-    splash.addEventListener('click', close);
-    addEventListener('keydown', close, { once: true });
+    go.addEventListener('click', close);
+    // Enter works even if focus moved off the button
+    addEventListener('keydown', e => { if (e.key === 'Enter' && ready && !closed) { e.preventDefault(); close(); } });
   });
 
   /* ---------- storage, gated by cookie consent ---------- */
