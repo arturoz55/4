@@ -37,7 +37,7 @@ for (const [f, type] of Object.entries(FILES)) {
   assets[f] = { body, type, v: crypto.createHash('sha256').update(body).digest('hex').slice(0, 10) };
 }
 let html = fs.readFileSync(new URL('index.html', ROOT), 'utf8');
-for (const f of Object.keys(assets)) html = html.replaceAll(`"${f}"`, `"/${f}?v=${assets[f].v}"`);
+for (const f of Object.keys(assets)) html = html.replace(new RegExp(`"${f.replace('.', '\\.')}(\\?v=[a-f0-9]*)?"`, 'g'), `"/${f}?v=${assets[f].v}"`);
 app.get('/', (req, reply) => reply.header('cache-control', 'no-cache').type('text/html; charset=utf-8').send(html));
 for (const f of Object.keys(assets)) {
   app.get('/' + f, (req, reply) => reply.header('cache-control', req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache').type(assets[f].type).send(assets[f].body));

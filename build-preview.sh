@@ -9,6 +9,8 @@ html = open('index.html').read()
 head = html.split('<!--BODY-START-->')[0]
 body = html.split('<!--BODY-START-->')[1].split('<!--BODY-END-->')[0]
 fonts = re.search(r'<link href="https://fonts[^>]+>', head).group(0)
+import re
+body = re.sub(r'<script src="main\.js(\?v=[a-f0-9]*)?"></script>', '<script src="main.js"></script>', body)
 body = body.replace('<script src="main.js"></script>', '<script>\n' + open('main.js').read() + '\n</script>')
 out = '<title>Hyperpad</title>\n' + fonts + '\n<style>\n' + open('style.css').read() + '\n</style>\n' + body
 open('dist/preview.html', 'w').write(out)

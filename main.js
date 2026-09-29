@@ -1879,7 +1879,9 @@
         openModal(m);
         setSide('buy');
         if (!wallet.get()) $('#trNote').textContent = 'Connect an Ethereum wallet to trade. Trades run on Robinhood Chain from your own wallet.';
-        else $('#trNote').textContent = 'Trades run on Robinhood Chain from your own wallet. Crypto is risky and you can lose what you put in.';
+        else $('#trNote').textContent = live.cfg.chain.id === 46630
+          ? 'This runs on Robinhood Chain Testnet: use test ETH only.'
+          : 'Trades run on Robinhood Chain from your own wallet. Crypto is risky and you can lose what you put in.';
       }
     };
   })();
@@ -1938,15 +1940,8 @@
   (async () => {
     let cfg = null;
     try { const r = await fetch('/api/config', { signal: AbortSignal.timeout(4000) }); if (r.ok && /json/.test(r.headers.get('content-type') || '')) cfg = await r.json(); } catch { cfg = null; }
-    const bar = $('#modeBar'), txt = $('#modeText');
-    if (!cfg || !cfg.launchpad) {
-      bar.hidden = false; bar.classList.add('demo');
-      txt.textContent = 'Demo mode: example coins and simulated trading. Nothing here touches a real chain.';
-      return;
-    }
+    if (!cfg || !cfg.launchpad) return;
     live.on = true; live.cfg = cfg;
-    bar.hidden = false;
-    txt.textContent = cfg.chain.id === 46630 ? `Live on ${cfg.chain.name}. This is a test network: use test ETH only.` : `Live on ${cfg.chain.name}.`;
     $('.sample-note').textContent = `Coins launched on ${cfg.chain.name}. Prices and fees update as trades land.`;
     $('#watchFeed').closest('.queue').querySelector('.queue-note').textContent = 'Every $25 of a coin\'s reel fees queues a new reel.';
     // drop the example data

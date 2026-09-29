@@ -11,6 +11,7 @@
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "abi": "node server/scripts/export-abi.js",
+    "stamp": "node scripts/stamp.mjs",
     "test": "node --test server/test/"
   },
   "dependencies": {
